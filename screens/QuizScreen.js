@@ -1,16 +1,17 @@
-import { Ionicons, MaterialIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import * as Speech from 'expo-speech';
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
-  Animated,
-  Dimensions,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View
+    ActivityIndicator,
+    Animated,
+    Dimensions,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
 } from 'react-native';
+import CommonHeader from '../components/CommonHeader';
 
 const { width } = Dimensions.get('window');
 
@@ -150,7 +151,7 @@ const QuizScreen = ({ route }) => {
   if (loading || questions.length === 0) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#FF3333" />
+        <ActivityIndicator size="large" color="#4CAF50" />
         <Text style={styles.loadingText}>Loading content...</Text>
       </View>
     );
@@ -161,27 +162,22 @@ const QuizScreen = ({ route }) => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <MaterialIcons name="arrow-back" size={24} color="#FF3333" />
-          <Text style={styles.backText}>Back</Text>
-        </TouchableOpacity>
-        <Text style={styles.title}>Lesson {lesson.lesson || 1}</Text>
-        <View style={styles.headerRight}>
-          <View style={styles.languageToggleContainer}>
-            <TouchableOpacity 
-              style={[styles.languageToggleButton, showKannada && styles.languageToggleActive]}
-              onPress={() => setShowKannada(!showKannada)}
-            >
-              <Text style={styles.languageToggleText}>ಕ</Text>
-            </TouchableOpacity>
-            <TouchableOpacity 
-              style={[styles.languageToggleButton, showEnglish && styles.languageToggleActive]}
-              onPress={() => setShowEnglish(!showEnglish)}
-            >
-              <Text style={styles.languageToggleText}>En</Text>
-            </TouchableOpacity>
-          </View>
+      <CommonHeader title={`Lesson ${lesson.lesson || 1}`} />
+
+      <View style={styles.subHeader}>
+        <View style={styles.languageToggleContainer}>
+          <TouchableOpacity 
+            style={[styles.languageToggleButton, showKannada && styles.languageToggleActive]}
+            onPress={() => setShowKannada(!showKannada)}
+          >
+            <Text style={styles.languageToggleText}>ಕ</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.languageToggleButton, showEnglish && styles.languageToggleActive]}
+            onPress={() => setShowEnglish(!showEnglish)}
+          >
+            <Text style={styles.languageToggleText}>En</Text>
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -389,38 +385,12 @@ const styles = StyleSheet.create({
     marginHorizontal: 5,
     fontWeight: '500',
   },
-  header: {
+  subHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-end',
     alignItems: 'center',
-    padding: 15,
-    backgroundColor: 'white',
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 5,
-  },
-  backText: {
-    marginLeft: 5,
-    color: '#FF3333',
-    fontSize: 16,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    textAlign: 'center',
-    zIndex: -1,
-  },
-  headerRight: {
-    width: 60,
-    alignItems: 'flex-end',
+    padding: 12,
+    backgroundColor: '#F8F9FA',
   },
   languageToggle: {
     padding: 6,

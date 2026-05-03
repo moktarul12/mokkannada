@@ -1,20 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { useEffect, useState } from 'react';
+import { FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 const ConversationList = ({ navigation }) => {
-  // Set navigation options
-  React.useLayoutEffect(() => {
-    navigation.setOptions({
-      headerShown: true,
-      headerTitle: '',
-      headerBackTitle: 'Back',
-      headerStyle: {
-        backgroundColor: '#FF3333',
-      },
-      headerTintColor: '#fff',
-    });
-  }, [navigation]);
 
   const [conversations, setConversations] = useState([]);
   const [userName, setUserName] = useState('You');
@@ -110,7 +98,8 @@ const ConversationList = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <CommonHeader title="Conversations" />
+      <View style={styles.subHeader}>
         <View>
           <Text style={styles.headerTitle}>Practice Conversations</Text>
           <Text style={styles.headerSubtitle}>Select a conversation to start practicing</Text>
@@ -119,7 +108,7 @@ const ConversationList = ({ navigation }) => {
           onPress={() => setIsEditing(!isEditing)}
           style={styles.editButton}
         >
-          <MaterialIcons name="edit" size={24} color="#FF3333" />
+          <MaterialIcons name="edit" size={24} color="#4CAF50" />
         </TouchableOpacity>
       </View>
 
@@ -164,7 +153,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f8f9fa',
   },
-  header: {
+  subHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',

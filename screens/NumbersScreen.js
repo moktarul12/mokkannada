@@ -1,6 +1,6 @@
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Animated,
   Dimensions,
@@ -12,6 +12,7 @@ import {
   TouchableWithoutFeedback,
   View
 } from 'react-native';
+import CommonHeader from '../components/CommonHeader';
 import { speakKannada } from '../utils/tts';
 
 const { width } = Dimensions.get('window');
@@ -207,12 +208,9 @@ const NumbersScreen = () => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <MaterialIcons name="arrow-back" size={24} color="#FF3333" />
-          <Text style={styles.backText}>Back</Text>
-        </TouchableOpacity>
-        <Text style={styles.title}>Numbers</Text>
+      <CommonHeader title="Numbers" />
+
+      <View style={styles.subHeader}>
         {activeTab === 'reference' && (
           <TouchableOpacity 
             onPress={() => setShowKannadaInRef(!showKannadaInRef)}
@@ -533,37 +531,12 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 15,
   },
-  header: {
+  subHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-end',
     alignItems: 'center',
-    padding: 15,
-    backgroundColor: 'white',
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 5,
-  },
-  backText: {
-    marginLeft: 5,
-    color: '#FF3333',
-    fontSize: 16,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    textAlign: 'center',
-    zIndex: -1,
-  },
-  headerRight: {
-    width: 40,
+    padding: 10,
+    backgroundColor: '#F8F9FA',
   },
   languageToggle: {
     padding: 6,
@@ -647,7 +620,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FF3333',
   },
   eyeButtonActive: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#FF3333',
   },
   kannadaContainer: {
     alignItems: 'center',
@@ -656,7 +629,7 @@ const styles = StyleSheet.create({
   kannadaNumber: {
     fontSize: 32,
     marginVertical: 8,
-    color: '#2E7D32',
+    color: '#FF3333',
     fontWeight: '600',
   },
   pronunciation: {
@@ -727,7 +700,7 @@ const styles = StyleSheet.create({
   },
   refKannadaNumber: {
     fontSize: 16,
-    color: '#2E7D32',
+    color: '#FF3333',
   },
   refPronunciation: {
     fontSize: 14,

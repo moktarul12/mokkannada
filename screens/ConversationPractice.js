@@ -1,19 +1,19 @@
-import React, { useState, useEffect, useRef } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  TextInput,
-  ScrollView,
-  ActivityIndicator,
-  Modal,
-  Alert,
-  Platform
-} from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 import { Audio } from 'expo-av';
 import * as Speech from 'expo-speech';
-import { MaterialIcons } from '@expo/vector-icons';
+import React, { useEffect, useRef, useState } from 'react';
+import {
+    ActivityIndicator,
+    Alert,
+    Modal,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
+} from 'react-native';
+import CommonHeader from '../components/CommonHeader';
 
 const contexts = [
   { id: 'taxi', emoji: '🚕', name: 'Auto Driver' },
@@ -388,6 +388,7 @@ export default function ConversationPractice({ navigation }) {
   if (!selectedContext) {
     return (
       <View style={styles.container}>
+        <CommonHeader title="AI Practice" />
         <Text style={styles.title}>Select a Context</Text>
         <ScrollView contentContainerStyle={styles.grid}>
           {contexts.map((context) => (
@@ -409,6 +410,7 @@ export default function ConversationPractice({ navigation }) {
   if (!selectedRole) {
     return (
       <View style={styles.container}>
+        <CommonHeader title="Select Role" />
         <Text style={styles.title}>Select Your Role</Text>
         <View style={styles.roleContainer}>
           {roleOptions.map((role) => (
@@ -436,6 +438,7 @@ export default function ConversationPractice({ navigation }) {
   // Render conversation
   return (
     <View style={styles.container}>
+      <CommonHeader title="Practice" />
       <View style={styles.conversationContainer}>
         <ScrollView
           style={styles.messagesContainer}

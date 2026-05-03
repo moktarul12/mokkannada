@@ -1,16 +1,17 @@
 import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View
+    ActivityIndicator,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
 } from 'react-native';
+import CommonHeader from '../components/CommonHeader';
 import ConversationBubble from '../components/ConversationBubble';
 
 const ConversationDetail = ({ route, navigation }) => {
@@ -23,19 +24,6 @@ const ConversationDetail = ({ route, navigation }) => {
   const [showLanguageMenu, setShowLanguageMenu] = useState(false);
   const scrollViewRef = useRef();
 
-  useEffect(() => {
-    navigation.setOptions({
-      title: conversation.title || 'Conversation',
-      headerStyle: {
-        backgroundColor: '#FF3333',
-      },
-      headerTintColor: '#fff',
-      headerTitleStyle: {
-        fontWeight: 'bold',
-      },
-      headerBackTitle: 'Back',
-    });
-  }, [conversation.title, navigation]);
 
   useEffect(() => {
     // Auto-scroll to bottom when messages change
@@ -203,6 +191,7 @@ const ConversationDetail = ({ route, navigation }) => {
 
   return (
     <View style={styles.container}>
+      <CommonHeader title={conversation.title || 'Conversation'} />
       {/* Language Toggle Button */}
 
       <View style={styles.languageButtonContainer}>

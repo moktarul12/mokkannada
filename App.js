@@ -1,18 +1,18 @@
-import React from 'react';
-import { StatusBar, View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { StatusBar, View } from 'react-native';
 
 // Screens
-import HomeScreen from './screens/HomeScreen';
-import LessonDetail from './screens/LessonDetail';
-import QuizScreen from './screens/QuizScreen';
 import LessonList from './components/LessonList';
 import BasicsScreen from './screens/BasicsScreen';
-import NumbersScreen from './screens/NumbersScreen';
-import ConversationList from './screens/ConversationList';
 import ConversationDetail from './screens/ConversationDetail';
+import ConversationList from './screens/ConversationList';
 import ConversationPractice from './screens/ConversationPractice';
+import GrammarScreen from './screens/GrammarScreen';
+import HomeScreen from './screens/HomeScreen';
+import LessonDetail from './screens/LessonDetail';
+import NumbersScreen from './screens/NumbersScreen';
+import QuizScreen from './screens/QuizScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -57,6 +57,14 @@ const App = () => {
             component={NumbersScreen}
             options={{
               title: 'Kannada Numbers',
+              ...commonScreenOptions,
+            }}
+          />
+          <Stack.Screen 
+            name="Grammar" 
+            component={GrammarScreen}
+            options={{
+              title: 'Kannada Grammar',
               ...commonScreenOptions,
             }}
           />

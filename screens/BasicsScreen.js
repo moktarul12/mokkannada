@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { useState } from 'react';
+import { Dimensions, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import CommonHeader from '../components/CommonHeader';
 
 const basics = {
   pronouns: [
@@ -40,7 +41,7 @@ const basics = {
 const BasicsScreen = () => {
   const navigation = useNavigation();
   const [expandedCategory, setExpandedCategory] = useState(null);
-  const [showKannada, setShowKannada] = useState(true);
+  const [showKannada, setShowKannada] = useState(false);
 
   const toggleCategory = (category) => {
     setExpandedCategory(expandedCategory === category ? null : category);
@@ -80,22 +81,19 @@ const BasicsScreen = () => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <MaterialIcons name="arrow-back" size={24} color="#FF3333" />
-          <Text style={styles.backText}>Back</Text>
-        </TouchableOpacity>
-        <Text style={styles.title}>Basics</Text>
+      <CommonHeader title="Basics" />
+
+      <View style={styles.toggleWrap}>
         <TouchableOpacity 
           onPress={() => setShowKannada(!showKannada)}
           style={styles.toggleButton}
         >
           <Text style={styles.toggleText}>
-            {showKannada ? 'Kannada' : 'Transliteration'}
+            {showKannada ? 'Show Transliteration' : 'Show Kannada'}
           </Text>
         </TouchableOpacity>
       </View>
-      
+
       <ScrollView style={styles.content}>
         {renderCategory('Pronouns', basics.pronouns, 'pronouns')}
         {renderCategory('Days of the Week', basics.days, 'days')}
@@ -110,62 +108,57 @@ const { width } = Dimensions.get('window');
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#F8F9FA',
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-    backgroundColor: '#fff',
-  },
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  backText: {
-    color: '#FF3333',
-    fontSize: 16,
-    marginLeft: 5,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
+  toggleWrap: {
+    padding: 12,
+    alignItems: 'flex-end',
   },
   toggleButton: {
-    padding: 5,
+    backgroundColor: '#FF3333',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
   },
   toggleText: {
-    color: '#FF3333',
-    fontWeight: '500',
+    color: '#FFFFFF',
+    fontWeight: '600',
+    fontSize: 13,
   },
   content: {
     flex: 1,
     padding: 15,
   },
   categoryContainer: {
-    marginBottom: 15,
-    backgroundColor: '#f9f9f9',
-    borderRadius: 10,
+    marginBottom: 16,
+    backgroundColor: 'white',
+    borderRadius: 12,
     overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   categoryHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 15,
-    backgroundColor: '#f0f0f0',
+    padding: 16,
+    backgroundColor: '#FFE5E5',
   },
   categoryTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333',
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#FF3333',
   },
   categoryContent: {
-    padding: 10,
+    padding: 12,
   },
   itemRow: {
     flexDirection: 'row',
@@ -191,7 +184,7 @@ const styles = StyleSheet.create({
   },
   kannadaText: {
     fontSize: 18,
-    color: '#FF3333',
+    color: '#000000',
     fontWeight: '500',
     minWidth: 80,
     textAlign: 'right',

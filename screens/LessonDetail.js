@@ -1,6 +1,7 @@
 import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import CommonHeader from '../components/CommonHeader';
 import ConversationBubble from '../components/ConversationBubble';
 
 const LessonDetail = ({ route, navigation }) => {
@@ -51,7 +52,7 @@ const LessonDetail = ({ route, navigation }) => {
               style={styles.backToListButton}
               onPress={() => setSelectedConversation(null)}
             >
-              <MaterialIcons name="arrow-back" size={20} color="#4CAF50" />
+              <MaterialIcons name="arrow-back" size={20} color="#FF3333" />
               <Text style={styles.backToListText}>Back to list</Text>
             </TouchableOpacity>
           </View>
@@ -253,7 +254,7 @@ const LessonDetail = ({ route, navigation }) => {
         <MaterialIcons 
           name={showEnglish ? 'check-box' : 'check-box-outline-blank'} 
           size={20} 
-          color={showEnglish ? '#4CAF50' : '#666'} 
+          color={showEnglish ? '#FF3333' : '#666'} 
         />
         <Text style={styles.languageOptionText}>English</Text>
       </TouchableOpacity>
@@ -264,7 +265,7 @@ const LessonDetail = ({ route, navigation }) => {
         <MaterialIcons 
           name={showKannada ? 'check-box' : 'check-box-outline-blank'} 
           size={20} 
-          color={showKannada ? '#4CAF50' : '#666'} 
+          color={showKannada ? '#FF3333' : '#666'} 
         />
         <Text style={styles.languageOptionText}>ಕನ್ನಡ</Text>
       </TouchableOpacity>
@@ -295,17 +296,10 @@ const LessonDetail = ({ route, navigation }) => {
 
   return (
     <View style={styles.container}>
+      <CommonHeader title={lesson.title || `Lesson ${lesson.lesson}`} />
+
       {/* Language Toggle Button */}
       {activeTab === 'conversations' && !selectedConversation && <LanguageToggle />}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <MaterialIcons name="arrow-back" size={24} color="#333" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>
-          {lesson.title || `Lesson ${lesson.lesson}`}
-        </Text>
-        <View style={styles.headerRight} />
-      </View>
 
       <View style={styles.tabs}>
         <TouchableOpacity
@@ -421,7 +415,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   languageToggleButtonActive: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#FF3333',
   },
   languageToggleText: {
     fontSize: 14,
@@ -443,7 +437,7 @@ const styles = StyleSheet.create({
   },
   backToListText: {
     marginLeft: 6,
-    color: '#4CAF50',
+    color: '#FF3333',
     fontSize: 15,
     fontWeight: '500',
   },
@@ -462,7 +456,7 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   languageButton: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#FF3333',
     width: 50,
     height: 50,
     borderRadius: 25,
@@ -510,29 +504,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f8f9fa',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 16,
-    backgroundColor: 'white',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-  },
-  backButton: {
-    padding: 8,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
-    flex: 1,
-    textAlign: 'center',
-    marginRight: 24, // To balance with the back button
-  },
-  headerRight: {
-    width: 40, // Same as back button for balance
   },
   tabs: {
     flexDirection: 'row',
