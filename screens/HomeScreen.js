@@ -126,7 +126,7 @@ const HomeScreen = () => {
     <TouchableOpacity
       key={item.id}
       style={[styles.CompactCard, { backgroundColor: item.cardBg }]}
-      onPress={() => navigation.navigate(item.screen)}
+      onPress={() => navigation.navigate(item.screen, { language: selectedLanguage })}
       activeOpacity={0.85}
     >
       <View style={[styles.CompactIconWrap, { backgroundColor: item.iconBg }]}>
@@ -212,25 +212,15 @@ const HomeScreen = () => {
         <ImageBackground source={require('../assets/images/header.jpg')} style={styles.hero} resizeMode="contain">
           <View style={styles.heroTopRow}>
             <View style={styles.pillButton}>
-              <Feather name="eye" size={18} color={COLORS.black} />
-              <Text style={styles.pillText}>ಕನ್ನಡ</Text>
+              <Image source={require('../assets/images/favicon.png')} style={styles.flagIconSmall} />
+              <Text style={styles.pillText}>
+                {selectedLanguage === 'English' ? 'EN' : selectedLanguage === 'Hindi' ? 'HI' : 'BN'}
+              </Text>
             </View>
 
-            <View style={styles.heroRightGroup}>
-              <View style={styles.pillButton}>
-                <Image source={require('../assets/images/favicon.png')} style={styles.flagIconSmall} />
-                <Text style={styles.pillText}>
-                  {selectedLanguage === 'English' ? 'EN' : selectedLanguage === 'Hindi' ? 'HI' : 'BN'}
-                </Text>
-              </View>
-              <TouchableOpacity style={styles.iconButton} activeOpacity={0.85}>
-                <Feather name="bell" size={18} color={COLORS.black} />
-                <View style={styles.notifDot} />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.iconButton} activeOpacity={0.85} onPress={() => setShowLanguageMenu(true)}>
-                <Feather name="more-vertical" size={20} color={COLORS.black} />
-              </TouchableOpacity>
-            </View>
+            <TouchableOpacity style={styles.iconButton} activeOpacity={0.85} onPress={() => setShowLanguageMenu(true)}>
+              <Feather name="more-vertical" size={20} color={COLORS.black} />
+            </TouchableOpacity>
           </View>
           <View style={styles.heroBottomSpacer} />
         </ImageBackground>

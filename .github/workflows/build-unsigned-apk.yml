@@ -1,0 +1,60 @@
+name: Build Unsigned APK
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'yarn'
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Install Expo CLI
+        run: npm install -g expo-cli
+
+      - name: Prebuild Android project
+        run: expo prebuild --platform android --clean
+
+      - name: Build Unsigned APK
+        run: |
+          cd android
+          ./gradlew assembleRelease -x bundleReleaseJsAndAssets
+
+      - name: Rename APK
+        run: |
+          mkdir -p output
+          cp android/app/build/outputs/apk/release/app-release-unsigned.apk output/app-unsigned.apk
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: unsigned-apk
+          path: output/app-unsigned.apk
+          retention-days: 30
+
+      - name: APK Info
+        run: |
+          echo "Unsigned APK built successfully!"
+          ls -lh output/app-unsigned.apk

@@ -627,10 +627,10 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   kannadaNumber: {
-    fontSize: 32,
+    fontSize: 48,
     marginVertical: 8,
     color: '#FF3333',
-    fontWeight: '600',
+    fontWeight: 'bold',
   },
   pronunciation: {
     fontSize: 16,

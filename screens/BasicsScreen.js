@@ -1,47 +1,118 @@
 import { MaterialIcons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { useState } from 'react';
 import { Dimensions, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import CommonHeader from '../components/CommonHeader';
 
-const basics = {
-  pronouns: [
-    { english: 'I', kannada: 'ನಾನು', pronunciation: 'Naanu' },
-    { english: 'You', kannada: 'ನೀನು', pronunciation: 'Neenu' },
-    { english: 'He', kannada: 'ಅವನು', pronunciation: 'Avanu' },
-    { english: 'She', kannada: 'ಅವಳು', pronunciation: 'AvaLu' },
-    { english: 'We', kannada: 'ನಾವು', pronunciation: 'Naavu' },
-    { english: 'They', kannada: 'ಅವರು', pronunciation: 'Avaru' },
-  ],
-  days: [
-    { english: 'Sunday', kannada: 'ಭಾನುವಾರ', pronunciation: 'Bhaanuvaara' },
-    { english: 'Monday', kannada: 'ಸೋಮವಾರ', pronunciation: 'Somavaara' },
-    { english: 'Tuesday', kannada: 'ಮಂಗಳವಾರ', pronunciation: 'Mangalavaara' },
-    { english: 'Wednesday', kannada: 'ಬುಧವಾರ', pronunciation: 'Budhavaara' },
-    { english: 'Thursday', kannada: 'ಗುರುವಾರ', pronunciation: 'Guruvaara' },
-    { english: 'Friday', kannada: 'ಶುಕ್ರವಾರ', pronunciation: 'Shukravaara' },
-    { english: 'Saturday', kannada: 'ಶನಿವಾರ', pronunciation: 'Shanivaara' },
-  ],
-  months: [
-    { english: 'January', kannada: 'ಜನವರಿ', pronunciation: 'Janavari' },
-    { english: 'February', kannada: 'ಫೆಬ್ರವರಿ', pronunciation: 'February' },
-    { english: 'March', kannada: 'ಮಾರ್ಚ್', pronunciation: 'March' },
-    { english: 'April', kannada: 'ಏಪ್ರಿಲ್', pronunciation: 'April' },
-    { english: 'May', kannada: 'ಮೇ', pronunciation: 'May' },
-    { english: 'June', kannada: 'ಜೂನ್', pronunciation: 'June' },
-    { english: 'July', kannada: 'ಜುಲೈ', pronunciation: 'July' },
-    { english: 'August', kannada: 'ಆಗಸ್ಟ್', pronunciation: 'August' },
-    { english: 'September', kannada: 'ಸೆಪ್ಟೆಂಬರ್', pronunciation: 'September' },
-    { english: 'October', kannada: 'ಅಕ್ಟೋಬರ್', pronunciation: 'October' },
-    { english: 'November', kannada: 'ನವೆಂಬರ್', pronunciation: 'November' },
-    { english: 'December', kannada: 'ಡಿಸೆಂಬರ್', pronunciation: 'December' },
-  ],
+const translations = {
+  English: {
+    pronouns: [
+      { source: 'I', kannada: 'ನಾನು', pronunciation: 'Naanu' },
+      { source: 'You', kannada: 'ನೀನು', pronunciation: 'Neenu' },
+      { source: 'He', kannada: 'ಅವನು', pronunciation: 'Avanu' },
+      { source: 'She', kannada: 'ಅವಳು', pronunciation: 'AvaLu' },
+      { source: 'We', kannada: 'ನಾವು', pronunciation: 'Naavu' },
+      { source: 'They', kannada: 'ಅವರು', pronunciation: 'Avaru' },
+    ],
+    days: [
+      { source: 'Sunday', kannada: 'ಭಾನುವಾರ', pronunciation: 'Bhaanuvaara' },
+      { source: 'Monday', kannada: 'ಸೋಮವಾರ', pronunciation: 'Somavaara' },
+      { source: 'Tuesday', kannada: 'ಮಂಗಳವಾರ', pronunciation: 'Mangalavaara' },
+      { source: 'Wednesday', kannada: 'ಬುಧವಾರ', pronunciation: 'Budhavaara' },
+      { source: 'Thursday', kannada: 'ಗುರುವಾರ', pronunciation: 'Guruvaara' },
+      { source: 'Friday', kannada: 'ಶುಕ್ರವಾರ', pronunciation: 'Shukravaara' },
+      { source: 'Saturday', kannada: 'ಶನಿವಾರ', pronunciation: 'Shanivaara' },
+    ],
+    months: [
+      { source: 'January', kannada: 'ಜನವರಿ', pronunciation: 'Janavari' },
+      { source: 'February', kannada: 'ಫೆಬ್ರವರಿ', pronunciation: 'February' },
+      { source: 'March', kannada: 'ಮಾರ್ಚ್', pronunciation: 'March' },
+      { source: 'April', kannada: 'ಏಪ್ರಿಲ್', pronunciation: 'April' },
+      { source: 'May', kannada: 'ಮೇ', pronunciation: 'May' },
+      { source: 'June', kannada: 'ಜೂನ್', pronunciation: 'June' },
+      { source: 'July', kannada: 'ಜುಲೈ', pronunciation: 'July' },
+      { source: 'August', kannada: 'ಆಗಸ್ಟ್', pronunciation: 'August' },
+      { source: 'September', kannada: 'ಸೆಪ್ಟೆಂಬರ್', pronunciation: 'September' },
+      { source: 'October', kannada: 'ಅಕ್ಟೋಬರ್', pronunciation: 'October' },
+      { source: 'November', kannada: 'ನವೆಂಬರ್', pronunciation: 'November' },
+      { source: 'December', kannada: 'ಡಿಸೆಂಬರ್', pronunciation: 'December' },
+    ],
+  },
+  Hindi: {
+    pronouns: [
+      { source: 'मैं', kannada: 'ನಾನು', pronunciation: 'Naanu' },
+      { source: 'तुम', kannada: 'ನೀನು', pronunciation: 'Neenu' },
+      { source: 'वह (पुरुष)', kannada: 'ಅವನು', pronunciation: 'Avanu' },
+      { source: 'वह (महिला)', kannada: 'ಅವಳು', pronunciation: 'AvaLu' },
+      { source: 'हम', kannada: 'ನಾವು', pronunciation: 'Naavu' },
+      { source: 'वे', kannada: 'ಅವರು', pronunciation: 'Avaru' },
+    ],
+    days: [
+      { source: 'रविवार', kannada: 'ಭಾನುವಾರ', pronunciation: 'Bhaanuvaara' },
+      { source: 'सोमवार', kannada: 'ಸೋಮವಾರ', pronunciation: 'Somavaara' },
+      { source: 'मंगलवार', kannada: 'ಮಂಗಳವಾರ', pronunciation: 'Mangalavaara' },
+      { source: 'बुधवार', kannada: 'ಬುಧವಾರ', pronunciation: 'Budhavaara' },
+      { source: 'गुरुवार', kannada: 'ಗುರುವಾರ', pronunciation: 'Guruvaara' },
+      { source: 'शुक्रवार', kannada: 'ಶುಕ್ರವಾರ', pronunciation: 'Shukravaara' },
+      { source: 'शनिवार', kannada: 'ಶನಿವಾರ', pronunciation: 'Shanivaara' },
+    ],
+    months: [
+      { source: 'जनवरी', kannada: 'ಜನವರಿ', pronunciation: 'Janavari' },
+      { source: 'फरवरी', kannada: 'ಫೆಬ್ರವರಿ', pronunciation: 'February' },
+      { source: 'मार्च', kannada: 'ಮಾರ್ಚ್', pronunciation: 'March' },
+      { source: 'अप्रैल', kannada: 'ಏಪ್ರಿಲ್', pronunciation: 'April' },
+      { source: 'मई', kannada: 'ಮೇ', pronunciation: 'May' },
+      { source: 'जून', kannada: 'ಜೂನ್', pronunciation: 'June' },
+      { source: 'जुलाई', kannada: 'ಜುಲೈ', pronunciation: 'July' },
+      { source: 'अगस्त', kannada: 'ಆಗಸ್ಟ್', pronunciation: 'August' },
+      { source: 'सितंबर', kannada: 'ಸೆಪ್ಟೆಂಬರ್', pronunciation: 'September' },
+      { source: 'अक्टूबर', kannada: 'ಅಕ್ಟೋಬರ್', pronunciation: 'October' },
+      { source: 'नवंबर', kannada: 'ನವೆಂಬರ್', pronunciation: 'November' },
+      { source: 'दिसंबर', kannada: 'ಡಿಸೆಂಬರ್', pronunciation: 'December' },
+    ],
+  },
+  Bengali: {
+    pronouns: [
+      { source: 'আমি', kannada: 'ನಾನು', pronunciation: 'Naanu' },
+      { source: 'তুমি', kannada: 'ನೀನು', pronunciation: 'Neenu' },
+      { source: 'সে (পুরুষ)', kannada: 'ಅವನು', pronunciation: 'Avanu' },
+      { source: 'সে (মহিলা)', kannada: 'ಅವಳು', pronunciation: 'AvaLu' },
+      { source: 'আমরা', kannada: 'ನಾವು', pronunciation: 'Naavu' },
+      { source: 'তারা', kannada: 'ಅವರು', pronunciation: 'Avaru' },
+    ],
+    days: [
+      { source: 'রবিবার', kannada: 'ಭಾನುವಾರ', pronunciation: 'Bhaanuvaara' },
+      { source: 'সোমবার', kannada: 'ಸೋಮವಾರ', pronunciation: 'Somavaara' },
+      { source: 'মঙ্গলবার', kannada: 'ಮಂಗಳವಾರ', pronunciation: 'Mangalavaara' },
+      { source: 'বুধবার', kannada: 'ಬುಧವಾರ', pronunciation: 'Budhavaara' },
+      { source: 'বৃহস্পতিবার', kannada: 'ಗುರುವಾರ', pronunciation: 'Guruvaara' },
+      { source: 'শুক্রবার', kannada: 'ಶುಕ್ರವಾರ', pronunciation: 'Shukravaara' },
+      { source: 'শনিবার', kannada: 'ಶನಿವಾರ', pronunciation: 'Shanivaara' },
+    ],
+    months: [
+      { source: 'জানুয়ারি', kannada: 'ಜನವರಿ', pronunciation: 'Janavari' },
+      { source: 'ফেব্রুয়ারি', kannada: 'ಫೆಬ್ರವರಿ', pronunciation: 'February' },
+      { source: 'মার্চ', kannada: 'ಮಾರ್ಚ್', pronunciation: 'March' },
+      { source: 'এপ্রিল', kannada: 'ಏಪ್ರಿಲ್', pronunciation: 'April' },
+      { source: 'মে', kannada: 'ಮೇ', pronunciation: 'May' },
+      { source: 'জুন', kannada: 'ಜೂನ್', pronunciation: 'June' },
+      { source: 'জুলাই', kannada: 'ಜುಲೈ', pronunciation: 'July' },
+      { source: 'আগস্ট', kannada: 'ಆಗಸ್ಟ್', pronunciation: 'August' },
+      { source: 'সেপ্টেম্বর', kannada: 'ಸೆಪ್ಟೆಂಬರ್', pronunciation: 'September' },
+      { source: 'অক্টোবর', kannada: 'ಅಕ್ಟೋಬರ್', pronunciation: 'October' },
+      { source: 'নভেম্বর', kannada: 'ನವೆಂಬರ್', pronunciation: 'November' },
+      { source: 'ডিসেম্বর', kannada: 'ಡಿಸೆಂಬರ್', pronunciation: 'December' },
+    ],
+  },
 };
 
 const BasicsScreen = () => {
   const navigation = useNavigation();
+  const route = useRoute();
+  const selectedLanguage = route.params?.language || 'English';
   const [expandedCategory, setExpandedCategory] = useState(null);
   const [showKannada, setShowKannada] = useState(false);
+  const basics = translations[selectedLanguage] || translations.English;
 
   const toggleCategory = (category) => {
     setExpandedCategory(expandedCategory === category ? null : category);
@@ -66,7 +137,7 @@ const BasicsScreen = () => {
           {data.map((item, index) => (
             <View key={index} style={styles.itemRow}>
               <View style={styles.englishContainer}>
-                <Text style={styles.englishText}>{item.english}</Text>
+                <Text style={styles.englishText}>{item.source}</Text>
                 <Text style={styles.pronunciation}>{item.pronunciation}</Text>
               </View>
               <Text style={styles.kannadaText}>
