@@ -40,7 +40,7 @@ jobs:
       - name: Build Unsigned APK
         run: |
           cd android
-          ./gradlew assembleRelease -x bundleReleaseJsAndAssets
+          ./gradlew assembleRelease
 
       - name: Rename APK
         run: |
