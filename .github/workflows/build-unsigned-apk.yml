@@ -45,7 +45,7 @@ jobs:
       - name: Build Unsigned APK
         run: |
           cd android
-          ./gradlew clean assembleRelease -x bundleReleaseJsAndAssets --stacktrace
+          ./gradlew clean assembleRelease
 
       - name: Rename APK
         run: |
