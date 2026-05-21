@@ -28,38 +28,23 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Setup Gradle
-        uses: gradle/gradle-build-action@v2
-        with:
-          gradle-version: wrapper
-
       - name: Install dependencies
         run: yarn install --frozen-lockfile
 
-      - name: Install Expo CLI
-        run: npm install -g expo-cli
+      - name: Install EAS CLI
+        run: npm install -g eas-cli
 
-      - name: Prebuild Android project
-        run: expo prebuild --platform android --clean
-
-      - name: Build Unsigned APK
-        run: |
-          cd android
-          ./gradlew clean assembleRelease
-
-      - name: Rename APK
-        run: |
-          mkdir -p output
-          cp android/app/build/outputs/apk/release/app-release-unsigned.apk output/app-unsigned.apk
+      - name: Build APK with EAS
+        run: eas build --platform android --profile preview --local --output ./app.apk
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: unsigned-apk
-          path: output/app-unsigned.apk
+          path: app.apk
           retention-days: 30
 
       - name: APK Info
         run: |
           echo "Unsigned APK built successfully!"
-          ls -lh output/app-unsigned.apk
+          ls -lh app.apk
