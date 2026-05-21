@@ -2,49 +2,57 @@ name: Build Unsigned APK
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   workflow_dispatch:
 
 jobs:
-  build-android:
+  build:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout repository
+      - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '20.x'
           cache: 'yarn'
+
+      - name: Install Dependencies
+        run: yarn install --frozen-lockfile
 
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
-          java-version: '17'
           distribution: 'temurin'
+          java-version: '17'
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Install dependencies
-        run: yarn install --frozen-lockfile
+      - name: Accept Android SDK Licenses
+        run: |
+          yes | sdkmanager --licenses || true
 
-      - name: Install EAS CLI
-        run: npm install -g eas-cli
+      - name: Clean Gradle Cache
+        run: |
+          cd android
+          ./gradlew clean
 
-      - name: Build APK with EAS
-        run: eas build --platform android --profile preview --local --output ./app.apk
+      - name: Build Unsigned APK
+        run: |
+          cd android
+          ./gradlew assembleRelease --warning-mode all --info --stacktrace
 
-      - name: Upload APK Artifact
+      - name: Find Build Artifacts
+        run: |
+          find android/app/build -name "*.apk" -type f
+
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: unsigned-apk
-          path: app.apk
-          retention-days: 30
-
-      - name: APK Info
-        run: |
-          echo "Unsigned APK built successfully!"
-          ls -lh app.apk
+          name: app-release-apk
+          path: |
+            android/app/build/outputs/apk/release/*.apk
+            android/app/build/outputs/apk/**/*.apk
