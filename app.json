@@ -9,10 +9,10 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.moktarul.kannadaspeakingapp"
+      "bundleIdentifier": "com.dromominds.kannadaspeakingapp"
     },
     "android": {
-      "package": "com.moktarul.kannadaspeakingapp",
+      "package": "com.dromominds.kannadaspeakingapp",
       "versionCode": 1,
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
