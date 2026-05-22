@@ -1,9 +1,8 @@
-name: Build Unsigned APK
+name: Build Android APK and AAB
 
 on:
   push:
-    branches: [main]
-  workflow_dispatch:
+    branches: [ "mainrelease" ]
 
 jobs:
   build:
@@ -20,7 +19,7 @@ jobs:
           cache: 'yarn'
 
       - name: Install Dependencies
-        run: yarn install --frozen-lockfile
+        run: npm install
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -40,14 +39,33 @@ jobs:
           cd android
           ./gradlew clean
 
-      - name: Build Unsigned APK
+      - name: Create Keystore
+        run: |
+          cd android/app
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > keystore.jks
+
+      - name: Set Signing Config
+        run: |
+          cd android
+          echo "MYAPP_RELEASE_STORE_FILE=app/keystore.jks" >> gradle.properties
+          echo "MYAPP_RELEASE_STORE_PASSWORD=${{ secrets.STORE_PASSWORD }}" >> gradle.properties
+          echo "MYAPP_RELEASE_KEY_ALIAS=${{ secrets.KEY_ALIAS }}" >> gradle.properties
+          echo "MYAPP_RELEASE_KEY_PASSWORD=${{ secrets.KEY_PASSWORD }}" >> gradle.properties
+
+      - name: Build Signed APK
         run: |
           cd android
           ./gradlew assembleRelease --warning-mode all --info --stacktrace
 
+      - name: Build Signed AAB
+        run: |
+          cd android
+          ./gradlew bundleRelease --warning-mode all --info --stacktrace
+
       - name: Find Build Artifacts
         run: |
           find android/app/build -name "*.apk" -type f
+          find android/app/build -name "*.aab" -type f
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
@@ -56,3 +74,11 @@ jobs:
           path: |
             android/app/build/outputs/apk/release/*.apk
             android/app/build/outputs/apk/**/*.apk
+
+      - name: Upload AAB
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release-aab
+          path: |
+            android/app/build/outputs/bundle/release/*.aab
+            android/app/build/outputs/bundle/**/*.aab
