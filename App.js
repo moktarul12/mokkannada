@@ -13,6 +13,8 @@ import HomeScreen from './screens/HomeScreen';
 import LessonDetail from './screens/LessonDetail';
 import NumbersScreen from './screens/NumbersScreen';
 import QuizScreen from './screens/QuizScreen';
+import SettingsScreen from './screens/SettingsScreen';
+import AboutUsScreen from './screens/AboutUsScreen'
 
 const Stack = createNativeStackNavigator();
 
@@ -117,6 +119,22 @@ const App = () => {
               ...commonScreenOptions,
               headerShown: true,
               headerBackTitle: 'Back',
+            }}
+          />
+          <Stack.Screen 
+            name="Settings" 
+            component={SettingsScreen}
+            options={{
+              title: 'Settings',
+              ...commonScreenOptions,
+            }}
+          />
+          <Stack.Screen 
+            name="AboutUs" 
+            component={AboutUsScreen}
+            options={{
+              title: 'About Us',
+              ...commonScreenOptions,
             }}
           />
         </Stack.Navigator>

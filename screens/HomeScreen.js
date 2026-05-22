@@ -211,15 +211,16 @@ const HomeScreen = () => {
       >
         <ImageBackground source={require('../assets/images/header.jpg')} style={styles.hero} resizeMode="contain">
           <View style={styles.heroTopRow}>
-            <View style={styles.pillButton}>
+            <TouchableOpacity style={styles.languagePillButton} activeOpacity={0.85} onPress={() => setShowLanguageMenu(true)}>
               <Image source={require('../assets/images/favicon.png')} style={styles.flagIconSmall} />
               <Text style={styles.pillText}>
-                {selectedLanguage === 'English' ? 'EN' : selectedLanguage === 'Hindi' ? 'HI' : 'BN'}
+                {selectedLanguage === 'English' ? 'EN → KN' : selectedLanguage === 'Hindi' ? 'HI → KN' : 'BN → KN'}
               </Text>
-            </View>
+              <MaterialIcons name="keyboard-arrow-down" size={18} color={COLORS.black} />
+            </TouchableOpacity>
 
-            <TouchableOpacity style={styles.iconButton} activeOpacity={0.85} onPress={() => setShowLanguageMenu(true)}>
-              <Feather name="more-vertical" size={20} color={COLORS.black} />
+            <TouchableOpacity style={styles.iconButton} activeOpacity={0.85} onPress={() => navigation.navigate('Settings')}>
+              <MaterialIcons name="settings" size={22} color={COLORS.black} />
             </TouchableOpacity>
           </View>
           <View style={styles.heroBottomSpacer} />
@@ -316,52 +317,113 @@ const HomeScreen = () => {
         </View>
       </Modal>
 
-      {/* Registration Modal */}
+      {/* Registration Modal - Full Page */}
       <Modal
         animationType="slide"
-        transparent={true}
+        transparent={false}
         visible={showRegistrationModal}
         onRequestClose={() => setShowRegistrationModal(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.registrationModalContent}>
-            <Text style={styles.modalTitle}>Register for Live Session</Text>
-            <Text style={styles.registrationSubtitle}>1-1 Session | 20 mins/day | 3 days/week | 15 Sessions | ₹3,000/-</Text>
-            
-            <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Full Name</Text>
-              <TextInput
-                style={styles.textInput}
-                placeholder="Enter your name"
-                value={registrationForm.name}
-                onChangeText={(text) => setRegistrationForm({...registrationForm, name: text})}
-              />
-            </View>
-            
-            <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Email</Text>
-              <TextInput
-                style={styles.textInput}
-                placeholder="Enter your email"
-                keyboardType="email-address"
-                value={registrationForm.email}
-                onChangeText={(text) => setRegistrationForm({...registrationForm, email: text})}
-              />
-            </View>
-            
-            <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Phone Number</Text>
-              <TextInput
-                style={styles.textInput}
-                placeholder="Enter your phone number"
-                keyboardType="phone-pad"
-                value={registrationForm.phone}
-                onChangeText={(text) => setRegistrationForm({...registrationForm, phone: text})}
-              />
+        <View style={styles.fullPageModal}>
+          <View style={styles.fullPageHeader}>
+            <TouchableOpacity onPress={() => setShowRegistrationModal(false)} style={styles.backButton}>
+              <MaterialIcons name="arrow-back" size={24} color={COLORS.black} />
+            </TouchableOpacity>
+            <Text style={styles.fullPageTitle}>Register for Live Session</Text>
+            <View style={{width: 24}} />
+          </View>
+
+          <ScrollView style={styles.fullPageContent} showsVerticalScrollIndicator={false}>
+            <View style={styles.sessionInfoCard}>
+              <View style={styles.sessionInfoHeader}>
+                <MaterialIcons name="support-agent" size={48} color={COLORS.primary} />
+                <View style={styles.liveBadgeInModal}>
+                  <View style={styles.liveDotSmall} />
+                  <Text style={styles.liveBadgeTextSmall}>LIVE</Text>
+                </View>
+              </View>
+              <Text style={styles.sessionInfoTitle}>1-1 Live Kannada Sessions</Text>
+              <View style={styles.sessionInfoDetails}>
+                <View style={styles.sessionInfoItem}>
+                  <MaterialIcons name="schedule" size={20} color={COLORS.gray} />
+                  <Text style={styles.sessionInfoText}>20 mins/day</Text>
+                </View>
+                <View style={styles.sessionInfoItem}>
+                  <MaterialIcons name="calendar-today" size={20} color={COLORS.gray} />
+                  <Text style={styles.sessionInfoText}>3 days/week</Text>
+                </View>
+                <View style={styles.sessionInfoItem}>
+                  <MaterialIcons name="school" size={20} color={COLORS.gray} />
+                  <Text style={styles.sessionInfoText}>15 Sessions</Text>
+                </View>
+                <View style={styles.sessionInfoItem}>
+                  <MaterialIcons name="currency-rupee" size={20} color={COLORS.accent} />
+                  <Text style={[styles.sessionInfoText, {color: COLORS.accent, fontWeight: 'bold'}]}>₹3,000/-</Text>
+                </View>
+              </View>
             </View>
 
+            <View style={styles.formSection}>
+              <Text style={styles.formSectionTitle}>Your Details</Text>
+              
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Full Name *</Text>
+                <TextInput
+                  style={styles.textInput}
+                  placeholder="Enter your full name"
+                  value={registrationForm.name}
+                  onChangeText={(text) => setRegistrationForm({...registrationForm, name: text})}
+                />
+              </View>
+              
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Email Address *</Text>
+                <TextInput
+                  style={styles.textInput}
+                  placeholder="your.email@example.com"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  value={registrationForm.email}
+                  onChangeText={(text) => setRegistrationForm({...registrationForm, email: text})}
+                />
+              </View>
+              
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Phone Number *</Text>
+                <TextInput
+                  style={styles.textInput}
+                  placeholder="+91 XXXXX XXXXX"
+                  keyboardType="phone-pad"
+                  value={registrationForm.phone}
+                  onChangeText={(text) => setRegistrationForm({...registrationForm, phone: text})}
+                />
+              </View>
+
+              <View style={styles.benefitsSection}>
+                <Text style={styles.benefitsTitle}>What You'll Get:</Text>
+                <View style={styles.benefitItem}>
+                  <MaterialIcons name="check-circle" size={20} color={COLORS.accent} />
+                  <Text style={styles.benefitText}>Personalized 1-1 attention</Text>
+                </View>
+                <View style={styles.benefitItem}>
+                  <MaterialIcons name="check-circle" size={20} color={COLORS.accent} />
+                  <Text style={styles.benefitText}>Flexible scheduling</Text>
+                </View>
+                <View style={styles.benefitItem}>
+                  <MaterialIcons name="check-circle" size={20} color={COLORS.accent} />
+                  <Text style={styles.benefitText}>Native Kannada speakers</Text>
+                </View>
+                <View style={styles.benefitItem}>
+                  <MaterialIcons name="check-circle" size={20} color={COLORS.accent} />
+                  <Text style={styles.benefitText}>Progress tracking</Text>
+                </View>
+              </View>
+            </View>
+          </ScrollView>
+
+          <View style={styles.fullPageFooter}>
             <TouchableOpacity
-              style={styles.registerSubmitButton}
+              style={styles.registerSubmitButtonFull}
               onPress={() => {
                 alert(`Registration submitted!\n\nName: ${registrationForm.name}\nEmail: ${registrationForm.email}\nPhone: ${registrationForm.phone}`);
                 setShowRegistrationModal(false);
@@ -369,13 +431,7 @@ const HomeScreen = () => {
               }}
             >
               <Text style={styles.registerSubmitText}>Submit Registration</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.modalCloseButton}
-              onPress={() => setShowRegistrationModal(false)}
-            >
-              <Text style={styles.modalCloseText}>Cancel</Text>
+              <MaterialIcons name="arrow-forward" size={20} color={COLORS.white} />
             </TouchableOpacity>
           </View>
         </View>
@@ -421,6 +477,17 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   pillButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.05)',
+    gap: 4,
+  },
+  languagePillButton: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 10,
@@ -1379,6 +1446,126 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  fullPageModal: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+  },
+  fullPageHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    backgroundColor: COLORS.white,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  backButton: {
+    padding: 4,
+  },
+  fullPageTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  fullPageContent: {
+    flex: 1,
+    padding: 16,
+  },
+  sessionInfoCard: {
+    backgroundColor: COLORS.white,
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  sessionInfoHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  liveBadgeInModal: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FEE2E2',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    gap: 4,
+  },
+  sessionInfoTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 16,
+  },
+  sessionInfoDetails: {
+    gap: 12,
+  },
+  sessionInfoItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  sessionInfoText: {
+    fontSize: 15,
+    color: '#666',
+  },
+  formSection: {
+    backgroundColor: COLORS.white,
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 20,
+  },
+  formSectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 16,
+  },
+  benefitsSection: {
+    marginTop: 20,
+    paddingTop: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+  },
+  benefitsTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 12,
+  },
+  benefitItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 10,
+  },
+  benefitText: {
+    fontSize: 15,
+    color: '#666',
+    flex: 1,
+  },
+  fullPageFooter: {
+    padding: 16,
+    backgroundColor: COLORS.white,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+  },
+  registerSubmitButtonFull: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.primary,
+    paddingVertical: 16,
+    borderRadius: 12,
+    gap: 8,
   },
 });
 
