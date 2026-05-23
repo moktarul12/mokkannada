@@ -1,7 +1,7 @@
 import { Feather, FontAwesome5, MaterialIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import { useState } from 'react';
-import { Dimensions, ImageBackground, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Dimensions, ImageBackground, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 const { width } = Dimensions.get('window');
 
@@ -1856,6 +1856,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 5,
     marginTop: 6,
+  },
+  dailyDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+  },
+  dailyDotActive: {
+    width: 18,
+    backgroundColor: COLORS.primary,
   },
   // ── Alert boxes ──────────────────────────────
   alertBox: {
