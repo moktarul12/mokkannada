@@ -1,9 +1,11 @@
 import { Feather, FontAwesome5, MaterialIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useState } from 'react';
-import { Dimensions, Image, ImageBackground, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Dimensions, ImageBackground, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 const { width } = Dimensions.get('window');
+
+const API_BASE = 'https://dromominds.com/apps';
 
 // Colors
 const COLORS = {
@@ -28,7 +30,76 @@ const HomeScreen = () => {
     name: '',
     email: '',
     phone: '',
+    message: '',
   });
+  const [streak] = useState(7);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitResult, setSubmitResult] = useState(null);
+  const [isDailySentence, setIsDailySentence] = useState(false);
+  const [dailyIndex, setDailyIndex] = useState(new Date().getDay());
+  const [showMeaning, setShowMeaning] = useState(false);
+  const autoRotateRef = useRef(null);
+
+  const DAILY_WORDS = [
+    { english: 'Water', kannada: 'ನೀರು', pronunciation: 'Neeru', emoji: '💧' },
+    { english: 'Food', kannada: 'ಆಹಾರ', pronunciation: 'Aahara', emoji: '🍛' },
+    { english: 'Hello', kannada: 'ನಮಸ್ಕಾರ', pronunciation: 'Namaskara', emoji: '🙏' },
+    { english: 'Thank you', kannada: 'ಧನ್ಯವಾದ', pronunciation: 'Dhanyavaada', emoji: '🙏' },
+    { english: 'Beautiful', kannada: 'ಸುಂದರ', pronunciation: 'Sundara', emoji: '🌸' },
+    { english: 'Love', kannada: 'ಪ್ರೀತಿ', pronunciation: 'Preeti', emoji: '❤️' },
+    { english: 'Home', kannada: 'ಮನೆ', pronunciation: 'Mane', emoji: '🏠' },
+  ];
+
+  const DAILY_SENTENCES = [
+    { english: 'How are you?', kannada: 'ನೀವು ಹೇಗಿದ್ದೀರಿ?', pronunciation: 'Neevu heegiddeeri?' },
+    { english: 'My name is...', kannada: 'ನನ್ನ ಹೆಸರು...', pronunciation: 'Nanna hesaru...' },
+    { english: 'Where is the bus stop?', kannada: 'ಬಸ್ ನಿಲ್ದಾಣ ಎಲ್ಲಿದೆ?', pronunciation: 'Bus nildaana ellide?' },
+    { english: 'I want to learn Kannada.', kannada: 'ನಾನು ಕನ್ನಡ ಕಲಿಯಲು ಬಯಸುತ್ತೇನೆ.', pronunciation: 'Naanu Kannada kaliyalu bayasutteene.' },
+    { english: 'What is the price?', kannada: 'ಬೆಲೆ ಎಷ್ಟು?', pronunciation: 'Bele eshtu?' },
+    { english: 'Please help me.', kannada: 'ದಯವಿಟ್ಟು ನನಗೆ ಸಹಾಯ ಮಾಡಿ.', pronunciation: 'Dayaviṭṭu nanage sahaaya maadi.' },
+    { english: 'Good morning!', kannada: 'ಶುಭ ಮುಂಜಾನೆ!', pronunciation: 'Shubha munjane!' },
+  ];
+
+  const dailyList = isDailySentence ? DAILY_SENTENCES : DAILY_WORDS;
+  const dailyItem = dailyList[Math.abs(dailyIndex) % dailyList.length];
+
+  const startAutoRotate = () => {
+    clearInterval(autoRotateRef.current);
+    autoRotateRef.current = setInterval(() => {
+      setDailyIndex(i => i + 1);
+      setShowMeaning(false);
+    }, 8000);
+  };
+
+  useEffect(() => {
+    startAutoRotate();
+    return () => clearInterval(autoRotateRef.current);
+  }, []);
+
+  const handleRegister = async () => {
+    if (!registrationForm.name || !registrationForm.email || !registrationForm.phone) {
+      setSubmitResult({ success: false, error: 'Please fill in all required fields.' });
+      return;
+    }
+    setSubmitting(true);
+    setSubmitResult(null);
+    try {
+      const res = await fetch(`${API_BASE}/register.php`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...registrationForm, language: selectedLanguage }),
+      });
+      const data = await res.json();
+      setSubmitResult(data);
+      if (data.success) {
+        setRegistrationForm({ name: '', email: '', phone: '', message: '' });
+      }
+    } catch (e) {
+      setSubmitResult({ success: false, error: 'Network error. Please try again.' });
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   const courseCards = [
     {
@@ -209,20 +280,25 @@ const HomeScreen = () => {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        <ImageBackground source={require('../assets/images/header.jpg')} style={styles.hero} resizeMode="contain">
-          <View style={styles.heroTopRow}>
-            <TouchableOpacity style={styles.languagePillButton} activeOpacity={0.85} onPress={() => setShowLanguageMenu(true)}>
-              <Image source={require('../assets/images/favicon.png')} style={styles.flagIconSmall} />
-              <Text style={styles.pillText}>
-                {selectedLanguage === 'English' ? 'EN → KN' : selectedLanguage === 'Hindi' ? 'HI → KN' : 'BN → KN'}
-              </Text>
-              <MaterialIcons name="keyboard-arrow-down" size={18} color={COLORS.black} />
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.iconButton} activeOpacity={0.85} onPress={() => navigation.navigate('Settings')}>
-              <MaterialIcons name="settings" size={22} color={COLORS.black} />
-            </TouchableOpacity>
+        {/* Top Header: Language | Streak | Settings */}
+        <View style={styles.topHeader}>
+          <TouchableOpacity style={styles.langPill} onPress={() => setShowLanguageMenu(true)}>
+            <MaterialIcons name="language" size={15} color="#444" />
+            <Text style={styles.langPillText}>
+              {selectedLanguage === 'English' ? 'EN' : selectedLanguage === 'Hindi' ? 'HI' : 'BN'} → KN
+            </Text>
+            <MaterialIcons name="keyboard-arrow-down" size={15} color="#888" />
+          </TouchableOpacity>
+          <View style={styles.streakBadge}>
+            <Text style={styles.streakFire}>🔥</Text>
+            <Text style={styles.streakNum}>{streak}</Text>
           </View>
+          <TouchableOpacity style={styles.settingsIconBtn} onPress={() => navigation.navigate('Settings')}>
+            <MaterialIcons name="settings" size={22} color="#444" />
+          </TouchableOpacity>
+        </View>
+
+        <ImageBackground source={require('../assets/images/header.jpg')} style={styles.hero} resizeMode="cover">
           <View style={styles.heroBottomSpacer} />
         </ImageBackground>
 
@@ -230,11 +306,52 @@ const HomeScreen = () => {
           <View style={styles.courseList}>
             {courseCards.map(CourseCard)}
           </View>
+
+          {/* Word / Sentence of the Day — replaces Continue Learning */}
+          <View style={styles.dailyInlineCard}>
+            <View style={styles.dailyInlineHeader}>
+              <View style={styles.dailyInlineToggle}>
+                <TouchableOpacity
+                  style={[styles.dailyInlinePill, !isDailySentence && styles.dailyInlinePillActive]}
+                  onPress={() => { setIsDailySentence(false); setShowMeaning(false); clearInterval(autoRotateRef.current); autoRotateRef.current = setInterval(() => { setDailyIndex(i=>i+1); setShowMeaning(false); }, 8000); }}
+                >
+                  <Text style={[styles.dailyInlinePillTxt, !isDailySentence && styles.dailyInlinePillTxtActive]}>Word</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.dailyInlinePill, isDailySentence && styles.dailyInlinePillActive]}
+                  onPress={() => { setIsDailySentence(true); setShowMeaning(false); clearInterval(autoRotateRef.current); autoRotateRef.current = setInterval(() => { setDailyIndex(i=>i+1); setShowMeaning(false); }, 8000); }}
+                >
+                  <Text style={[styles.dailyInlinePillTxt, isDailySentence && styles.dailyInlinePillTxtActive]}>Sentence</Text>
+                </TouchableOpacity>
+              </View>
+              <TouchableOpacity style={styles.dailyReloadBtn} onPress={() => { setDailyIndex(i => i + 1); setShowMeaning(false); }}>
+                <MaterialIcons name="refresh" size={18} color={COLORS.primary} />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.dailyInlineBody}>
+              {!isDailySentence && dailyItem.emoji && <Text style={styles.dailyInlineEmoji}>{dailyItem.emoji}</Text>}
+              <Text style={styles.dailyInlineKannada}>{dailyItem.kannada}</Text>
+              <Text style={styles.dailyInlinePronun}>{dailyItem.pronunciation}</Text>
+              {showMeaning
+                ? <Text style={styles.dailyInlineMeaning}>{dailyItem.english}</Text>
+                : <TouchableOpacity style={styles.dailyRevealBtn} onPress={() => setShowMeaning(true)}>
+                    <Text style={styles.dailyRevealTxt}>Reveal meaning</Text>
+                  </TouchableOpacity>
+              }
+            </View>
+
+            <View style={styles.dailyInlineDots}>
+              {dailyList.map((_, i) => (
+                <View key={i} style={[styles.dailyDot, i === (dailyIndex % dailyList.length) && styles.dailyDotActive]} />
+              ))}
+            </View>
+          </View>
         </View>
       </ScrollView>
 
-      {/* Fixed Live Session Banner at Bottom */}
-      <TouchableOpacity style={styles.liveBannerFixed} activeOpacity={0.9} onPress={() => setShowRegistrationModal(true)}>
+      {/* Bottom Live Session Banner */}
+      <View style={styles.liveBannerFixed}>
         <View style={styles.liveBannerContent}>
           <View style={styles.liveBannerLeft}>
             <View style={styles.liveBadgeRowFixed}>
@@ -246,39 +363,27 @@ const HomeScreen = () => {
             <Text style={styles.liveBannerTitleFixed}>1-1 Live Sessions</Text>
             <View style={styles.liveDetailsRow}>
               <View style={styles.liveDetailItem}>
-                <MaterialIcons name="schedule" size={14} color="#6C757D" />
+                <MaterialIcons name="schedule" size={13} color="#6C757D" />
                 <Text style={styles.liveDetailTextSmall}>20m/day</Text>
               </View>
               <View style={styles.liveDetailItem}>
-                <MaterialIcons name="calendar-today" size={14} color="#6C757D" />
+                <MaterialIcons name="calendar-today" size={13} color="#6C757D" />
                 <Text style={styles.liveDetailTextSmall}>3d/week</Text>
               </View>
-            </View>
-            <View style={styles.liveDetailsRow}>
               <View style={styles.liveDetailItem}>
-                <MaterialIcons name="school" size={14} color="#6C757D" />
+                <MaterialIcons name="school" size={13} color="#6C757D" />
                 <Text style={styles.liveDetailTextSmall}>15 Sessions</Text>
-              </View>
-              <View style={styles.liveDetailItem}>
-                <MaterialIcons name="currency-rupee" size={14} color="#4CAF50" />
-                <Text style={styles.livePriceTextSmall}>3,000/-</Text>
               </View>
             </View>
           </View>
           <View style={styles.liveBannerRight}>
-            <View style={styles.humanIconWrap}>
-              <MaterialIcons name="support-agent" size={50} color="#4CAF50" />
-              <View style={styles.headsetIndicator}>
-                <MaterialIcons name="headset-mic" size={20} color="#FFFFFF" />
-              </View>
-            </View>
-            <View style={styles.registerNowBadge}>
-              <Text style={styles.registerNowText}>Register</Text>
-              <MaterialIcons name="arrow-forward" size={14} color="#FFFFFF" />
-            </View>
+            <TouchableOpacity style={styles.liveRegisterBtn} onPress={() => { setSubmitResult(null); setShowRegistrationModal(true); }}>
+              <Text style={styles.liveRegisterBtnTxt}>Register →</Text>
+            </TouchableOpacity>
+            <Text style={styles.livePriceLarge}>₹3,000/-</Text>
           </View>
         </View>
-      </TouchableOpacity>
+      </View>
 
       {/* Language Selection Modal */}
       <Modal
@@ -365,6 +470,15 @@ const HomeScreen = () => {
 
             <View style={styles.formSection}>
               <Text style={styles.formSectionTitle}>Your Details</Text>
+
+              {submitResult && (
+                <View style={[styles.alertBox, submitResult.success ? styles.alertSuccess : styles.alertError]}>
+                  <MaterialIcons name={submitResult.success ? 'check-circle' : 'error'} size={20} color={submitResult.success ? '#388E3C' : '#D32F2F'} />
+                  <Text style={[styles.alertText, {color: submitResult.success ? '#388E3C' : '#D32F2F'}]}>
+                    {submitResult.success ? submitResult.message : submitResult.error}
+                  </Text>
+                </View>
+              )}
               
               <View style={styles.inputContainer}>
                 <Text style={styles.inputLabel}>Full Name *</Text>
@@ -423,15 +537,17 @@ const HomeScreen = () => {
 
           <View style={styles.fullPageFooter}>
             <TouchableOpacity
-              style={styles.registerSubmitButtonFull}
-              onPress={() => {
-                alert(`Registration submitted!\n\nName: ${registrationForm.name}\nEmail: ${registrationForm.email}\nPhone: ${registrationForm.phone}`);
-                setShowRegistrationModal(false);
-                setRegistrationForm({name: '', email: '', phone: ''});
-              }}
+              style={[styles.registerSubmitButtonFull, submitting && {opacity:0.7}]}
+              onPress={handleRegister}
+              disabled={submitting}
             >
-              <Text style={styles.registerSubmitText}>Submit Registration</Text>
-              <MaterialIcons name="arrow-forward" size={20} color={COLORS.white} />
+              {submitting
+                ? <ActivityIndicator color={COLORS.white} />
+                : <>
+                    <Text style={styles.registerSubmitText}>Submit Registration</Text>
+                    <MaterialIcons name="arrow-forward" size={20} color={COLORS.white} />
+                  </>
+              }
             </TouchableOpacity>
           </View>
         </View>
@@ -1566,6 +1682,204 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderRadius: 12,
     gap: 8,
+  },
+  // ── Top Header ──────────────────────────────
+  topHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingTop: 48,
+    paddingBottom: 10,
+    backgroundColor: COLORS.white,
+  },
+  langPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    borderWidth: 1.5,
+    borderColor: '#E0E0E0',
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    backgroundColor: '#F9F9F9',
+  },
+  langPillText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#333',
+  },
+  streakBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#FFF3E0',
+    borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: '#FFE0B2',
+  },
+  streakFire: {
+    fontSize: 16,
+  },
+  streakNum: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#E65100',
+  },
+  settingsIconBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    backgroundColor: '#F5F5F5',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+  // ── Live Banner redesign ─────────────────────
+  liveRegisterBtn: {
+    backgroundColor: COLORS.accent,
+    borderRadius: 24,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    marginBottom: 6,
+  },
+  liveRegisterBtnTxt: {
+    color: '#FFFFFF',
+    fontWeight: '800',
+    fontSize: 14,
+  },
+  livePriceLarge: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#1B5E20',
+    textAlign: 'center',
+  },
+  // ── Daily Inline Card ────────────────────────
+  dailyInlineCard: {
+    backgroundColor: '#1A1A3E',
+    borderRadius: 20,
+    marginTop: 16,
+    overflow: 'hidden',
+    paddingBottom: 14,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  dailyInlineHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.07)',
+  },
+  dailyInlineToggle: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderRadius: 20,
+    padding: 3,
+    gap: 2,
+  },
+  dailyInlinePill: {
+    paddingHorizontal: 14,
+    paddingVertical: 5,
+    borderRadius: 18,
+  },
+  dailyInlinePillActive: {
+    backgroundColor: COLORS.primary,
+  },
+  dailyInlinePillTxt: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: 'rgba(255,255,255,0.5)',
+  },
+  dailyInlinePillTxtActive: {
+    color: '#FFFFFF',
+  },
+  dailyReloadBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  dailyInlineBody: {
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 18,
+    paddingBottom: 10,
+  },
+  dailyInlineEmoji: {
+    fontSize: 32,
+    marginBottom: 10,
+  },
+  dailyInlineKannada: {
+    fontSize: 30,
+    fontWeight: 'bold',
+    color: '#FFD700',
+    textAlign: 'center',
+    marginBottom: 6,
+  },
+  dailyInlinePronun: {
+    fontSize: 13,
+    color: '#9090B0',
+    fontStyle: 'italic',
+    marginBottom: 14,
+  },
+  dailyInlineMeaning: {
+    fontSize: 16,
+    color: '#FFFFFF',
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  dailyRevealBtn: {
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.25)',
+    borderRadius: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+  },
+  dailyRevealTxt: {
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.55)',
+  },
+  dailyInlineDots: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 5,
+    marginTop: 6,
+  },
+  // ── Alert boxes ──────────────────────────────
+  alertBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    padding: 12,
+    borderRadius: 10,
+    marginBottom: 16,
+  },
+  alertSuccess: {
+    backgroundColor: '#E8F5E9',
+    borderWidth: 1,
+    borderColor: '#A5D6A7',
+  },
+  alertError: {
+    backgroundColor: '#FFEBEE',
+    borderWidth: 1,
+    borderColor: '#FFCDD2',
+  },
+  alertText: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '500',
   },
 });
 
