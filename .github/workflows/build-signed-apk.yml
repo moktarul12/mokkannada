@@ -1,8 +1,8 @@
-name: Build Android APK and AAB
+name: Build Android Release AAB
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "release" ]
 
 jobs:
   build:
@@ -43,6 +43,7 @@ jobs:
         run: |
           cd android/app
           echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > keystore.jks
+          echo "Keystore created at $(pwd)/keystore.jks"
 
       - name: Set Signing Config
         run: |
@@ -51,29 +52,21 @@ jobs:
           echo "MYAPP_RELEASE_STORE_PASSWORD=${{ secrets.STORE_PASSWORD }}" >> gradle.properties
           echo "MYAPP_RELEASE_KEY_ALIAS=${{ secrets.KEY_ALIAS }}" >> gradle.properties
           echo "MYAPP_RELEASE_KEY_PASSWORD=${{ secrets.KEY_PASSWORD }}" >> gradle.properties
-
-      - name: Build Signed APK
-        run: |
-          cd android
-          ./gradlew assembleRelease --warning-mode all --info --stacktrace
+          cat gradle.properties
 
       - name: Build Signed AAB
         run: |
           cd android
           ./gradlew bundleRelease --warning-mode all --info --stacktrace
+        env:
+          ORG_GRADLE_PROJECT_MYAPP_RELEASE_STORE_FILE: app/keystore.jks
+          ORG_GRADLE_PROJECT_MYAPP_RELEASE_STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
+          ORG_GRADLE_PROJECT_MYAPP_RELEASE_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          ORG_GRADLE_PROJECT_MYAPP_RELEASE_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
 
       - name: Find Build Artifacts
         run: |
-          find android/app/build -name "*.apk" -type f
           find android/app/build -name "*.aab" -type f
-
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: app-release-apk
-          path: |
-            android/app/build/outputs/apk/release/*.apk
-            android/app/build/outputs/apk/**/*.apk
 
       - name: Upload AAB
         uses: actions/upload-artifact@v4
