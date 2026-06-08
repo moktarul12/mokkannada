@@ -1,4 +1,4 @@
-name: Build Android APK and AAB
+name: Build Android Release AAB
 
 on:
   push:
@@ -52,11 +52,6 @@ jobs:
           echo "MYAPP_RELEASE_KEY_ALIAS=${{ secrets.KEY_ALIAS }}" >> gradle.properties
           echo "MYAPP_RELEASE_KEY_PASSWORD=${{ secrets.KEY_PASSWORD }}" >> gradle.properties
 
-      - name: Build Signed APK
-        run: |
-          cd android
-          ./gradlew assembleRelease --warning-mode all --info --stacktrace
-
       - name: Build Signed AAB
         run: |
           cd android
@@ -64,16 +59,7 @@ jobs:
 
       - name: Find Build Artifacts
         run: |
-          find android/app/build -name "*.apk" -type f
           find android/app/build -name "*.aab" -type f
-          
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: app-release-apk
-          path: |
-            android/app/build/outputs/apk/release/*.apk
-            android/app/build/outputs/apk/**/*.apk
 
       - name: Upload AAB
         uses: actions/upload-artifact@v4
