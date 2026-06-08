@@ -48,7 +48,7 @@ jobs:
       - name: Set Signing Config
         run: |
           cd android
-          echo "MYAPP_RELEASE_STORE_FILE=app/keystore.jks" >> gradle.properties
+          echo "MYAPP_RELEASE_STORE_FILE=keystore.jks" >> gradle.properties
           echo "MYAPP_RELEASE_STORE_PASSWORD=${{ secrets.STORE_PASSWORD }}" >> gradle.properties
           echo "MYAPP_RELEASE_KEY_ALIAS=${{ secrets.KEY_ALIAS }}" >> gradle.properties
           echo "MYAPP_RELEASE_KEY_PASSWORD=${{ secrets.KEY_PASSWORD }}" >> gradle.properties
@@ -59,7 +59,7 @@ jobs:
           cd android
           ./gradlew bundleRelease --warning-mode all --info --stacktrace
         env:
-          ORG_GRADLE_PROJECT_MYAPP_RELEASE_STORE_FILE: app/keystore.jks
+          ORG_GRADLE_PROJECT_MYAPP_RELEASE_STORE_FILE: keystore.jks
           ORG_GRADLE_PROJECT_MYAPP_RELEASE_STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
           ORG_GRADLE_PROJECT_MYAPP_RELEASE_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           ORG_GRADLE_PROJECT_MYAPP_RELEASE_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
