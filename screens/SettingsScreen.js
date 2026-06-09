@@ -1,6 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Linking, Alert } from 'react-native';
-import { MaterialIcons, Feather } from '@expo/vector-icons';
+import { MaterialIcons } from '@expo/vector-icons';
+import { Alert, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import CommonHeader from '../components/CommonHeader';
 
 const SettingsScreen = ({ navigation }) => {
@@ -84,7 +83,7 @@ const SettingsScreen = ({ navigation }) => {
           <View style={styles.appInfo}>
             <MaterialIcons name="settings" size={60} color="#FF3333" />
             <Text style={styles.appName}>Kannada Speaking App</Text>
-            <Text style={styles.appVersion}>Version 1.0.0</Text>
+            <Text style={styles.appVersion}>Version 1.0.1</Text>
           </View>
 
           <View style={styles.optionsList}>

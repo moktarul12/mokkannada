@@ -2,7 +2,7 @@
   "expo": {
     "name": "KannadaSpeakingApp",
     "slug": "KannadaSpeakingApp",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "kannadaspeakingapp",
@@ -13,7 +13,7 @@
     },
     "android": {
       "package": "com.dromominds.kannadaspeakingapp",
-      "versionCode": 1,
+      "versionCode": 101,
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
