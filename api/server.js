@@ -27,7 +27,12 @@ app.post('/api/register', async (req, res) => {
       return res.status(400).json({ success: false, error: 'Invalid email address' });
     }
 
-    await sendRegistrationEmail({ name, email, phone, language, message });
+    try {
+      await sendRegistrationEmail({ name, email, phone, language, message });
+    } catch (mailErr) {
+      // Client already emails via FormSubmit; server mail is best-effort.
+      console.warn('server mail skipped:', mailErr.message);
+    }
 
     return res.json({
       success: true,
@@ -117,18 +122,33 @@ async function sendRegistrationEmail({ name, email, phone, language, message }) 
   }
 
   // 3) Legacy PHP API (stores lead + PHP mail() to moktarul@gmail.com)
-  const phpUrl = process.env.PHP_REGISTER_URL || 'https://dromominds.com/apps/register.php';
-  try {
-    const r = await fetch(phpUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, phone, language, message }),
-    });
-    const data = await r.json().catch(() => ({}));
-    if (r.ok && data.success) return;
-    errors.push(`PHP: ${data.error || r.status}`);
-  } catch (e) {
-    errors.push(`PHP: ${e.message}`);
+  const phpCandidates = [
+    process.env.PHP_REGISTER_URL,
+    'https://www.dromominds.com/apps/register.php',
+    'https://dromominds.com/apps/register.php',
+  ].filter(Boolean);
+
+  for (const phpUrl of phpCandidates) {
+    try {
+      const r = await fetch(phpUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ name, email, phone, language, message }),
+        redirect: 'follow',
+      });
+      const raw = await r.text();
+      let data = {};
+      try {
+        data = JSON.parse(raw);
+      } catch (_) {
+        errors.push(`PHP ${phpUrl}: non-JSON ${r.status}`);
+        continue;
+      }
+      if (r.ok && data.success) return;
+      errors.push(`PHP ${phpUrl}: ${data.error || r.status}`);
+    } catch (e) {
+      errors.push(`PHP ${phpUrl}: ${e.message}`);
+    }
   }
 
   throw new Error(errors.join(' | ') || 'No email transport configured');

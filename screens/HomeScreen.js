@@ -123,21 +123,52 @@ const HomeScreen = () => {
     setSubmitting(true);
     setSubmitResult(null);
     try {
-      const registerUrl = API_BASE.endsWith('/api')
-        ? `${API_BASE}/register`
-        : `${API_BASE}/register.php`;
-      const res = await fetch(registerUrl, {
+      const payload = { ...registrationForm, language: selectedLanguage };
+
+      // Browser → FormSubmit emails moktarul@gmail.com (avoids Render IP / Cloudflare blocks)
+      const mailRes = await fetch('https://formsubmit.co/ajax/moktarul@gmail.com', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...registrationForm, language: selectedLanguage }),
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify({
+          name: payload.name,
+          email: payload.email,
+          phone: payload.phone,
+          language: payload.language,
+          message: payload.message || '(none)',
+          _subject: `Mok Kannada — New Live Session Registration: ${payload.name}`,
+          _template: 'table',
+          _captcha: 'false',
+        }),
       });
-      const data = await res.json();
-      setSubmitResult(data);
-      if (data.success) {
-        setRegistrationForm({ name: '', email: '', phone: '', message: '' });
+      const mailData = await mailRes.json().catch(() => ({}));
+      if (!mailRes.ok || mailData.success === 'false') {
+        throw new Error(mailData.message || 'Could not send registration email. Please try again.');
       }
+
+      // Best-effort server log / SMTP / PHP relay (does not block UX if it fails)
+      try {
+        const registerUrl = API_BASE.endsWith('/api')
+          ? `${API_BASE}/register`
+          : `${API_BASE}/register.php`;
+        await fetch(registerUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+      } catch (_) {
+        // ignore secondary failures
+      }
+
+      setSubmitResult({
+        success: true,
+        message: 'Registration successful! We will contact you shortly.',
+      });
+      setRegistrationForm({ name: '', email: '', phone: '', message: '' });
     } catch (e) {
-      setSubmitResult({ success: false, error: 'Network error. Please try again.' });
+      setSubmitResult({ success: false, error: e.message || 'Network error. Please try again.' });
     } finally {
       setSubmitting(false);
     }
