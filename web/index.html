@@ -2,17 +2,32 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
-    <meta name="theme-color" content="#000000" />
-    <meta name="description" content="Kannada Speaking App - Learn and practice Kannada language" />
-    <title>Kannada Speaking App</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#1A1210" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="description" content="Mok Kannada — learn and practice speaking Kannada" />
+    <title>Mok Kannada</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Kannada:wght@600;700&family=Source+Sans+3:wght@500;600;700;800&display=swap" rel="stylesheet" />
     <style>
-      /* These styles make the body full-height */
-      html, body { height: 100%; }
-      /* These styles disable body scrolling if you are using <ScrollView> */
-      body { overflow: hidden; }
-      /* These styles make the root element full-height */
-      #root { display: flex; height: 100%; }
+      html, body { height: 100%; margin: 0; }
+      body {
+        overflow: hidden;
+        background: #1A1210;
+        font-family: 'Source Sans 3', 'Noto Sans Kannada', system-ui, sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      #root {
+        display: flex;
+        height: 100%;
+        width: 100%;
+      }
+      /* Mobile browser feel on touch devices */
+      @media (max-width: 519px) {
+        body { background: #FFF8F3; }
+      }
     </style>
   </head>
   <body>

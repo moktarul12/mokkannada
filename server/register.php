@@ -70,6 +70,24 @@ if ($stmt->execute()) {
     $id = $stmt->insert_id;
     $stmt->close();
     $conn->close();
+
+    // Notify admin mailbox on every successful registration
+    $notifyTo = 'moktarul@gmail.com';
+    $subject  = "Mok Kannada — New Live Session Registration: {$name}";
+    $body     = "New 1-1 Live Session registration\n\n"
+              . "Name: {$name}\n"
+              . "Email: {$email}\n"
+              . "Phone: {$phone}\n"
+              . "Language: {$language}\n"
+              . "Message: " . ($message !== '' ? $message : '(none)') . "\n"
+              . "Registration ID: {$id}\n"
+              . "IP: {$ip}\n"
+              . "Time: " . date('c') . "\n";
+    $headers  = "From: Mok Kannada <noreply@dromominds.com>\r\n"
+              . "Reply-To: {$email}\r\n"
+              . "Content-Type: text/plain; charset=UTF-8\r\n";
+    @mail($notifyTo, $subject, $body, $headers);
+
     echo json_encode([
         'success'    => true,
         'message'    => 'Registration successful! We will contact you shortly.',

@@ -1,8 +1,11 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import { Alert, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import CommonHeader from '../components/CommonHeader';
+import { useAuth } from '../context/AuthContext';
 
 const SettingsScreen = ({ navigation }) => {
+  const { user, isAuthenticated, logout, isAuth0Configured } = useAuth();
+
   const handleRateApp = () => {
     Alert.alert('Rate App', 'Thank you for your support!');
   };
@@ -74,6 +77,17 @@ const SettingsScreen = ({ navigation }) => {
     },
   ];
 
+  if (isAuthenticated && isAuth0Configured) {
+    settingsOptions.push({
+      id: 'logout',
+      title: 'Sign out',
+      subtitle: user?.email || 'End your Auth0 session',
+      icon: 'logout',
+      iconBg: '#E8392B',
+      onPress: logout,
+    });
+  }
+
   return (
     <View style={styles.container}>
       <CommonHeader title="Settings" showBack={true} />
@@ -81,9 +95,11 @@ const SettingsScreen = ({ navigation }) => {
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         <View style={styles.content}>
           <View style={styles.appInfo}>
-            <MaterialIcons name="settings" size={60} color="#FF3333" />
-            <Text style={styles.appName}>Kannada Speaking App</Text>
-            <Text style={styles.appVersion}>Version 1.0.1</Text>
+            <MaterialIcons name="settings" size={60} color="#E8392B" />
+            <Text style={styles.appName}>Mok Kannada</Text>
+            <Text style={styles.appVersion}>
+              {user?.email ? user.email : 'Version 1.0.1'}
+            </Text>
           </View>
 
           <View style={styles.optionsList}>
@@ -107,7 +123,7 @@ const SettingsScreen = ({ navigation }) => {
           </View>
 
           <View style={styles.footer}>
-            <Text style={styles.footerText}>Made with ❤️ for Kannada learners</Text>
+            <Text style={styles.footerText}>Made for Kannada learners</Text>
             <Text style={styles.footerCopyright}>© 2024 Dromominds</Text>
           </View>
         </View>

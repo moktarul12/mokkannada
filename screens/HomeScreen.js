@@ -1,37 +1,84 @@
 import { Feather, FontAwesome5, MaterialIcons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Dimensions, ImageBackground, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Animated,
+  Dimensions,
+  Image,
+  ImageBackground,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { useAuth } from '../context/AuthContext';
 
-const { width } = Dimensions.get('window');
-
-const API_BASE = 'https://dromominds.com/apps';
-
-// Colors
-const COLORS = {
-  primary: '#FF3333',
-  secondary: '#FF6B6B',
-  accent: '#4CAF50',
-  background: '#F8F9FA',
-  white: '#FFFFFF',
-  black: '#000000',
-  gray: '#6C757D',
-  lightGray: '#E9ECEF',
-  cardBorder: 'rgba(0,0,0,0.06)',
+const { width: WINDOW_WIDTH } = Dimensions.get('window');
+const CONTENT_WIDTH = Math.min(WINDOW_WIDTH, 390);
+const resolveApiBase = () => {
+  if (typeof window === 'undefined') return 'https://dromominds.com/apps';
+  const { hostname, origin } = window.location;
+  // Render / production → same-origin Express API (emails moktarul@gmail.com)
+  if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
+    return `${origin}/api`;
+  }
+  // Local Expo web → existing PHP host
+  return 'https://dromominds.com/apps';
 };
 
+const API_BASE = resolveApiBase();
+
+const COLORS = {
+  primary: '#E8392B',
+  ink: '#1A1210',
+  cream: '#FFF8F3',
+  sand: '#F3E7DC',
+  muted: '#6B5E57',
+  white: '#FFFFFF',
+  success: '#2F9E5F',
+};
+
+const DAILY_WORDS = [
+  { english: 'Water', kannada: 'ನೀರು', pronunciation: 'Neeru', emoji: '💧' },
+  { english: 'Food', kannada: 'ಆಹಾರ', pronunciation: 'Aahara', emoji: '🍛' },
+  { english: 'Hello', kannada: 'ನಮಸ್ಕಾರ', pronunciation: 'Namaskara', emoji: '🙏' },
+  { english: 'Thank you', kannada: 'ಧನ್ಯವಾದ', pronunciation: 'Dhanyavaada', emoji: '🙏' },
+  { english: 'Beautiful', kannada: 'ಸುಂದರ', pronunciation: 'Sundara', emoji: '🌸' },
+  { english: 'Love', kannada: 'ಪ್ರೀತಿ', pronunciation: 'Preeti', emoji: '❤️' },
+  { english: 'Home', kannada: 'ಮನೆ', pronunciation: 'Mane', emoji: '🏠' },
+];
+
+const DAILY_SENTENCES = [
+  { english: 'How are you?', kannada: 'ನೀವು ಹೇಗಿದ್ದೀರಿ?', pronunciation: 'Neevu heegiddeeri?' },
+  { english: 'My name is...', kannada: 'ನನ್ನ ಹೆಸರು...', pronunciation: 'Nanna hesaru...' },
+  { english: 'Where is the bus stop?', kannada: 'ಬಸ್ ನಿಲ್ದಾಣ ಎಲ್ಲಿದೆ?', pronunciation: 'Bus nildaana ellide?' },
+  { english: 'I want to learn Kannada.', kannada: 'ನಾನು ಕನ್ನಡ ಕಲಿಯಲು ಬಯಸುತ್ತೇನೆ.', pronunciation: 'Naanu Kannada kaliyalu bayasutteene.' },
+  { english: 'What is the price?', kannada: 'ಬೆಲೆ ಎಷ್ಟು?', pronunciation: 'Bele eshtu?' },
+  { english: 'Please help me.', kannada: 'ದಯವಿಟ್ಟು ನನಗೆ ಸಹಾಯ ಮಾಡಿ.', pronunciation: 'Dayaviṭṭu nanage sahaaya maadi.' },
+  { english: 'Good morning!', kannada: 'ಶುಭ ಮುಂಜಾನೆ!', pronunciation: 'Shubha munjane!' },
+];
+
+const COURSE_CARDS = [
+  { id: 'basics', title: 'Basics', subtitle: 'Essential words', icon: 'language', iconBg: '#2F9E5F', screen: 'Basics' },
+  { id: 'numbers', title: 'Numbers', subtitle: 'Learn to count', icon: 'looks-one', iconBg: '#2B6CB0', screen: 'Numbers' },
+  { id: 'grammar', title: 'Grammar', subtitle: 'Core rules', icon: 'menu-book', iconBg: '#B45309', screen: 'Grammar' },
+  { id: 'lessons', title: 'Lessons', subtitle: 'Structured path', icon: 'school', iconBg: '#E8392B', screen: 'LessonList' },
+  { id: 'conversations', title: 'Conversations', subtitle: 'Real dialogues', icon: 'forum', iconBg: '#7C3AED', screen: 'ConversationList' },
+  { id: 'ai-practice', title: 'AI Practice', subtitle: 'Speak with AI', icon: 'smart-toy', iconBg: '#C2410C', screen: 'ConversationPractice' },
+];
 
 const HomeScreen = () => {
   const navigation = useNavigation();
+  const { user, logout, isAuthenticated } = useAuth();
   const [showLanguageMenu, setShowLanguageMenu] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState('English');
   const [showRegistrationModal, setShowRegistrationModal] = useState(false);
-  const [registrationForm, setRegistrationForm] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    message: '',
-  });
+  const [registrationForm, setRegistrationForm] = useState({ name: '', email: '', phone: '', message: '' });
   const [streak] = useState(7);
   const [submitting, setSubmitting] = useState(false);
   const [submitResult, setSubmitResult] = useState(null);
@@ -39,42 +86,34 @@ const HomeScreen = () => {
   const [dailyIndex, setDailyIndex] = useState(new Date().getDay());
   const [showMeaning, setShowMeaning] = useState(false);
   const autoRotateRef = useRef(null);
-
-  const DAILY_WORDS = [
-    { english: 'Water', kannada: 'ನೀರು', pronunciation: 'Neeru', emoji: '💧' },
-    { english: 'Food', kannada: 'ಆಹಾರ', pronunciation: 'Aahara', emoji: '🍛' },
-    { english: 'Hello', kannada: 'ನಮಸ್ಕಾರ', pronunciation: 'Namaskara', emoji: '🙏' },
-    { english: 'Thank you', kannada: 'ಧನ್ಯವಾದ', pronunciation: 'Dhanyavaada', emoji: '🙏' },
-    { english: 'Beautiful', kannada: 'ಸುಂದರ', pronunciation: 'Sundara', emoji: '🌸' },
-    { english: 'Love', kannada: 'ಪ್ರೀತಿ', pronunciation: 'Preeti', emoji: '❤️' },
-    { english: 'Home', kannada: 'ಮನೆ', pronunciation: 'Mane', emoji: '🏠' },
-  ];
-
-  const DAILY_SENTENCES = [
-    { english: 'How are you?', kannada: 'ನೀವು ಹೇಗಿದ್ದೀರಿ?', pronunciation: 'Neevu heegiddeeri?' },
-    { english: 'My name is...', kannada: 'ನನ್ನ ಹೆಸರು...', pronunciation: 'Nanna hesaru...' },
-    { english: 'Where is the bus stop?', kannada: 'ಬಸ್ ನಿಲ್ದಾಣ ಎಲ್ಲಿದೆ?', pronunciation: 'Bus nildaana ellide?' },
-    { english: 'I want to learn Kannada.', kannada: 'ನಾನು ಕನ್ನಡ ಕಲಿಯಲು ಬಯಸುತ್ತೇನೆ.', pronunciation: 'Naanu Kannada kaliyalu bayasutteene.' },
-    { english: 'What is the price?', kannada: 'ಬೆಲೆ ಎಷ್ಟು?', pronunciation: 'Bele eshtu?' },
-    { english: 'Please help me.', kannada: 'ದಯವಿಟ್ಟು ನನಗೆ ಸಹಾಯ ಮಾಡಿ.', pronunciation: 'Dayaviṭṭu nanage sahaaya maadi.' },
-    { english: 'Good morning!', kannada: 'ಶುಭ ಮುಂಜಾನೆ!', pronunciation: 'Shubha munjane!' },
-  ];
+  const heroFade = useRef(new Animated.Value(0)).current;
+  const heroRise = useRef(new Animated.Value(18)).current;
 
   const dailyList = isDailySentence ? DAILY_SENTENCES : DAILY_WORDS;
   const dailyItem = dailyList[Math.abs(dailyIndex) % dailyList.length];
 
-  const startAutoRotate = () => {
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(heroFade, { toValue: 1, duration: 650, useNativeDriver: true }),
+      Animated.timing(heroRise, { toValue: 0, duration: 650, useNativeDriver: true }),
+    ]).start();
+  }, [heroFade, heroRise]);
+
+  useEffect(() => {
+    autoRotateRef.current = setInterval(() => {
+      setDailyIndex((i) => i + 1);
+      setShowMeaning(false);
+    }, 8000);
+    return () => clearInterval(autoRotateRef.current);
+  }, []);
+
+  const restartRotate = () => {
     clearInterval(autoRotateRef.current);
     autoRotateRef.current = setInterval(() => {
-      setDailyIndex(i => i + 1);
+      setDailyIndex((i) => i + 1);
       setShowMeaning(false);
     }, 8000);
   };
-
-  useEffect(() => {
-    startAutoRotate();
-    return () => clearInterval(autoRotateRef.current);
-  }, []);
 
   const handleRegister = async () => {
     if (!registrationForm.name || !registrationForm.email || !registrationForm.phone) {
@@ -84,7 +123,10 @@ const HomeScreen = () => {
     setSubmitting(true);
     setSubmitResult(null);
     try {
-      const res = await fetch(`${API_BASE}/register.php`, {
+      const registerUrl = API_BASE.endsWith('/api')
+        ? `${API_BASE}/register`
+        : `${API_BASE}/register.php`;
+      const res = await fetch(registerUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...registrationForm, language: selectedLanguage }),
@@ -101,294 +143,192 @@ const HomeScreen = () => {
     }
   };
 
-  const courseCards = [
-    {
-      id: 'basics',
-      title: 'Basics',
-      titleKannada: 'ಮೂಲಾಂಗಗಳು',
-      subtitle: 'Essential words',
-      icon: 'chat',
-      iconType: 'MaterialIcons',
-      iconBg: '#4CAF50',
-      cardBg: '#F5F3FF',
-      screen: 'Basics',
-    },
-    {
-      id: 'numbers',
-      title: 'Numbers',
-      titleKannada: 'ಸಂಖ್ಯೆಗಳು',
-      subtitle: 'Learn to count',
-      icon: 'dialpad',
-      iconType: 'MaterialIcons',
-      iconBg: '#2196F3',
-      cardBg: '#EAF2FF',
-      screen: 'Numbers',
-    },
-    {
-      id: 'grammar',
-      title: 'Grammar',
-      titleKannada: 'ವ್ಯಾಕರಣ',
-      subtitle: 'Learn grammar rules',
-      icon: 'spellcheck',
-      iconType: 'MaterialIcons',
-      iconBg: '#9333EA',
-      cardBg: '#E9F7EC',
-      screen: 'Grammar',
-    },
-    {
-      id: 'lessons',
-      title: 'Lessons',
-      titleKannada: 'ಪಾಠಗಳು',
-      subtitle: 'Structured learning',
-      icon: 'school',
-      iconType: 'MaterialIcons',
-      iconBg: '#FF6B6B',
-      cardBg: '#FFF0F0',
-      screen: 'LessonList',
-    },
-    {
-      id: 'conversations',
-      title: 'Conversations',
-      titleKannada: 'ಸಂಭಾಷಣೆಗಳು',
-      subtitle: 'Common dialogues',
-      icon: 'forum',
-      iconType: 'MaterialIcons',
-      iconBg: '#9C27B0',
-      cardBg: '#F3E5F5',
-      screen: 'ConversationList',
-    },
-    {
-      id: 'ai-practice',
-      title: 'AI Practice',
-      titleKannada: 'AI ಪ್ರಾಕ್ಟೀಸ್',
-      subtitle: 'Practice with AI',
-      icon: 'smart-toy',
-      iconType: 'MaterialIcons',
-      iconBg: '#FF9800',
-      cardBg: '#FFF3E0',
-      screen: 'ConversationPractice',
-    },
-  ];
-
-  const renderCourseIcon = (item) => {
-    // UX-matching icons for Basics, Numbers, Grammar
-    if (item.id === 'basics') {
-      return <MaterialIcons name="language" size={30} color={COLORS.white} />;
-    }
-    if (item.id === 'numbers') {
-      return <MaterialIcons name="looks-one" size={32} color={COLORS.white} />;
-    }
-    if (item.id === 'grammar') {
-      return <MaterialIcons name="menu-book" size={28} color={COLORS.white} />;
-    }
-    if (item.iconType === 'MaterialIcons') {
-      return <MaterialIcons name={item.icon} size={32} color={COLORS.white} />;
-    }
-    if (item.iconType === 'FontAwesome5') {
-      return <FontAwesome5 name={item.icon} size={32} color={COLORS.white} />;
-    }
-    if (item.iconType === 'Feather') {
-      return <Feather name={item.icon} size={32} color={COLORS.white} />;
-    }
-    return <MaterialIcons name={item.icon} size={32} color={COLORS.white} />;
-  };
-
-  const CourseCard = (item) => (
-    <TouchableOpacity
-      key={item.id}
-      style={[styles.CompactCard, { backgroundColor: item.cardBg }]}
-      onPress={() => navigation.navigate(item.screen, { language: selectedLanguage })}
-      activeOpacity={0.85}
-    >
-      <View style={[styles.CompactIconWrap, { backgroundColor: item.iconBg }]}>
-        {renderCourseIcon(item)}
-      </View>
-
-      <View style={styles.CompactTextCol}>
-        <Text style={styles.CompactTitleEnglish}>{item.title}</Text>
-        <Text style={styles.CompactSubtitle}>{item.subtitle}</Text>
-      </View>
-
-      {item.id === 'grammar' && (
-        <View style={styles.GrammarDecoration}>
-           <View style={styles.notepad}>
-              <View style={styles.notepadSpiral}>
-                 {[1,2,3,4,5].map(i => <View key={i} style={styles.spiralDot} />)}
-              </View>
-              <View style={styles.notepadContent}>
-                 <View style={[styles.notepadLine, {width: '80%', backgroundColor: '#FEE2E2'}]} />
-                 <View style={[styles.notepadLine, {width: '90%', backgroundColor: '#FEE2E2'}]} />
-                 <View style={[styles.notepadLine, {width: '70%', backgroundColor: '#FEE2E2'}]} />
-              </View>
-           </View>
-           <View style={styles.pencil}>
-              <View style={styles.pencilTip} />
-           </View>
-        </View>
-      )}
-      {item.id === 'basics' && (
-        <View style={styles.BasicsDecoration}>
-           <View style={styles.paperStack}>
-              <View style={[styles.paperBack, {transform: [{rotate: '-8deg'}], top: -2}]} />
-              <View style={[styles.paperBack, {transform: [{rotate: '-4deg'}], top: 0}]} />
-              <View style={styles.paperFront}>
-                 <Text style={styles.paperText}>ನಮಸ್ಕಾರ</Text>
-                 <Text style={styles.paperTextEnglish}>Namaskara</Text>
-              </View>
-           </View>
-           <View style={styles.plantInPot}>
-              <View style={styles.pot} />
-              <View style={styles.plantLeaf} />
-              <View style={styles.plantLeaf2} />
-           </View>
-        </View>
-      )}
-      {item.id === 'numbers' && (
-        <View style={styles.NumbersDecoration}>
-           <View style={[styles.block3d, {backgroundColor: '#3B82F6', top: 0, left: 18, zIndex: 2}]}>
-              <Text style={styles.blockText}>1</Text>
-           </View>
-           <View style={[styles.block3d, {backgroundColor: '#FBBF24', bottom: 5, left: 0}]}>
-              <Text style={styles.blockText}>2</Text>
-           </View>
-           <View style={[styles.block3d, {backgroundColor: '#EF4444', bottom: 5, right: 0}]}>
-              <Text style={styles.blockText}>3</Text>
-           </View>
-        </View>
-      )}
-      {item.id === 'conversations' && (
-        <View style={styles.CompactDecoration}>
-           <MaterialIcons name="forum" size={45} color={item.iconBg} opacity={0.15} />
-        </View>
-      )}
-      {item.id === 'ai-practice' && (
-        <View style={styles.CompactDecoration}>
-           <FontAwesome5 name="robot" size={40} color={item.iconBg} opacity={0.15} />
-        </View>
-      )}
-
-      <View style={styles.CompactArrowWrap}>
-        <MaterialIcons name="chevron-right" size={24} color="#4B5563" />
-      </View>
-    </TouchableOpacity>
-  );
+  const langCode =
+    selectedLanguage === 'English' ? 'EN' : selectedLanguage === 'Hindi' ? 'HI' : 'BN';
 
   return (
     <View style={styles.safeArea}>
-      <ScrollView 
+      <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {/* Top Header: Language | Streak | Settings */}
-        <View style={styles.topHeader}>
-          <TouchableOpacity style={styles.langPill} onPress={() => setShowLanguageMenu(true)}>
-            <MaterialIcons name="language" size={15} color="#444" />
-            <Text style={styles.langPillText}>
-              {selectedLanguage === 'English' ? 'EN' : selectedLanguage === 'Hindi' ? 'HI' : 'BN'} → KN
-            </Text>
-            <MaterialIcons name="keyboard-arrow-down" size={15} color="#888" />
-          </TouchableOpacity>
-          <View style={styles.streakBadge}>
-            <Text style={styles.streakFire}>🔥</Text>
-            <Text style={styles.streakNum}>{streak}</Text>
-          </View>
-          <TouchableOpacity style={styles.settingsIconBtn} onPress={() => navigation.navigate('Settings')}>
-            <MaterialIcons name="settings" size={22} color="#444" />
-          </TouchableOpacity>
-        </View>
+        <ImageBackground
+          source={require('../assets/images/header.jpg')}
+          style={styles.hero}
+          resizeMode="cover"
+        >
+          <LinearGradient
+            colors={['rgba(26,18,16,0.15)', 'rgba(26,18,16,0.55)', COLORS.cream]}
+            locations={[0, 0.55, 1]}
+            style={styles.heroGradient}
+          />
 
-        <ImageBackground source={require('../assets/images/header.jpg')} style={styles.hero} resizeMode="cover">
-          <View style={styles.heroBottomSpacer} />
+          <View style={styles.topBar}>
+            <TouchableOpacity style={styles.langPill} onPress={() => setShowLanguageMenu(true)}>
+              <MaterialIcons name="language" size={15} color={COLORS.ink} />
+              <Text style={styles.langPillText}>{langCode} → KN</Text>
+              <MaterialIcons name="keyboard-arrow-down" size={15} color={COLORS.muted} />
+            </TouchableOpacity>
+
+            <View style={styles.topRight}>
+              <View style={styles.streakBadge}>
+                <Text style={styles.streakFire}>🔥</Text>
+                <Text style={styles.streakNum}>{streak}</Text>
+              </View>
+              {isAuthenticated && user?.picture ? (
+                <TouchableOpacity onPress={() => navigation.navigate('Settings')}>
+                  <Image source={{ uri: user.picture }} style={styles.avatar} />
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity
+                  style={styles.settingsIconBtn}
+                  onPress={() => navigation.navigate('Settings')}
+                >
+                  <MaterialIcons name="settings" size={20} color={COLORS.ink} />
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+
+          <Animated.View
+            style={[
+              styles.heroCopy,
+              { opacity: heroFade, transform: [{ translateY: heroRise }] },
+            ]}
+          >
+            <Text style={styles.brandKannada}>ಕನ್ನಡ</Text>
+            <Text style={styles.brandLatin}>Mok Kannada</Text>
+            <Text style={styles.heroSupport}>
+              {user?.name
+                ? `Welcome back, ${user.name.split(' ')[0]}`
+                : 'Learn to speak Kannada — start with the basics.'}
+            </Text>
+            <TouchableOpacity
+              style={styles.heroCta}
+              onPress={() => navigation.navigate('Basics', { language: selectedLanguage })}
+              activeOpacity={0.88}
+            >
+              <Text style={styles.heroCtaText}>Start learning</Text>
+              <MaterialIcons name="arrow-forward" size={18} color={COLORS.cream} />
+            </TouchableOpacity>
+          </Animated.View>
         </ImageBackground>
 
         <View style={styles.contentWrapper}>
+          <Text style={styles.sectionLabel}>Learn</Text>
           <View style={styles.courseList}>
-            {courseCards.map(CourseCard)}
+            {COURSE_CARDS.map((item) => (
+              <TouchableOpacity
+                key={item.id}
+                style={styles.courseRow}
+                onPress={() => navigation.navigate(item.screen, { language: selectedLanguage })}
+                activeOpacity={0.85}
+              >
+                <View style={[styles.courseIcon, { backgroundColor: item.iconBg }]}>
+                  <MaterialIcons name={item.icon} size={22} color={COLORS.white} />
+                </View>
+                <View style={styles.courseText}>
+                  <Text style={styles.courseTitle}>{item.title}</Text>
+                  <Text style={styles.courseSubtitle}>{item.subtitle}</Text>
+                </View>
+                <MaterialIcons name="chevron-right" size={22} color={COLORS.muted} />
+              </TouchableOpacity>
+            ))}
           </View>
 
-          {/* Word / Sentence of the Day — replaces Continue Learning */}
-          <View style={styles.dailyInlineCard}>
-            <View style={styles.dailyInlineHeader}>
-              <View style={styles.dailyInlineToggle}>
+          <View style={styles.dailyCard}>
+            <View style={styles.dailyHeader}>
+              <View style={styles.dailyToggle}>
                 <TouchableOpacity
-                  style={[styles.dailyInlinePill, !isDailySentence && styles.dailyInlinePillActive]}
-                  onPress={() => { setIsDailySentence(false); setShowMeaning(false); clearInterval(autoRotateRef.current); autoRotateRef.current = setInterval(() => { setDailyIndex(i=>i+1); setShowMeaning(false); }, 8000); }}
+                  style={[styles.dailyPill, !isDailySentence && styles.dailyPillActive]}
+                  onPress={() => {
+                    setIsDailySentence(false);
+                    setShowMeaning(false);
+                    restartRotate();
+                  }}
                 >
-                  <Text style={[styles.dailyInlinePillTxt, !isDailySentence && styles.dailyInlinePillTxtActive]}>Word</Text>
+                  <Text style={[styles.dailyPillTxt, !isDailySentence && styles.dailyPillTxtActive]}>
+                    Word
+                  </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={[styles.dailyInlinePill, isDailySentence && styles.dailyInlinePillActive]}
-                  onPress={() => { setIsDailySentence(true); setShowMeaning(false); clearInterval(autoRotateRef.current); autoRotateRef.current = setInterval(() => { setDailyIndex(i=>i+1); setShowMeaning(false); }, 8000); }}
+                  style={[styles.dailyPill, isDailySentence && styles.dailyPillActive]}
+                  onPress={() => {
+                    setIsDailySentence(true);
+                    setShowMeaning(false);
+                    restartRotate();
+                  }}
                 >
-                  <Text style={[styles.dailyInlinePillTxt, isDailySentence && styles.dailyInlinePillTxtActive]}>Sentence</Text>
+                  <Text style={[styles.dailyPillTxt, isDailySentence && styles.dailyPillTxtActive]}>
+                    Sentence
+                  </Text>
                 </TouchableOpacity>
               </View>
-              <TouchableOpacity style={styles.dailyReloadBtn} onPress={() => { setDailyIndex(i => i + 1); setShowMeaning(false); }}>
+              <TouchableOpacity
+                style={styles.dailyReloadBtn}
+                onPress={() => {
+                  setDailyIndex((i) => i + 1);
+                  setShowMeaning(false);
+                }}
+              >
                 <MaterialIcons name="refresh" size={18} color={COLORS.primary} />
               </TouchableOpacity>
             </View>
 
-            <View style={styles.dailyInlineBody}>
-              {!isDailySentence && dailyItem.emoji && <Text style={styles.dailyInlineEmoji}>{dailyItem.emoji}</Text>}
-              <Text style={styles.dailyInlineKannada}>{dailyItem.kannada}</Text>
-              <Text style={styles.dailyInlinePronun}>{dailyItem.pronunciation}</Text>
-              {showMeaning
-                ? <Text style={styles.dailyInlineMeaning}>{dailyItem.english}</Text>
-                : <TouchableOpacity style={styles.dailyRevealBtn} onPress={() => setShowMeaning(true)}>
-                    <Text style={styles.dailyRevealTxt}>Reveal meaning</Text>
-                  </TouchableOpacity>
-              }
-            </View>
-
-            <View style={styles.dailyInlineDots}>
-              {dailyList.map((_, i) => (
-                <View key={i} style={[styles.dailyDot, i === (dailyIndex % dailyList.length) && styles.dailyDotActive]} />
-              ))}
+            <View style={styles.dailyBody}>
+              {!isDailySentence && dailyItem.emoji ? (
+                <Text style={styles.dailyEmoji}>{dailyItem.emoji}</Text>
+              ) : null}
+              <Text style={styles.dailyKannada}>{dailyItem.kannada}</Text>
+              <Text style={styles.dailyPronun}>{dailyItem.pronunciation}</Text>
+              {showMeaning ? (
+                <Text style={styles.dailyMeaning}>{dailyItem.english}</Text>
+              ) : (
+                <TouchableOpacity style={styles.dailyRevealBtn} onPress={() => setShowMeaning(true)}>
+                  <Text style={styles.dailyRevealTxt}>Reveal meaning</Text>
+                </TouchableOpacity>
+              )}
             </View>
           </View>
+
+          {isAuthenticated ? (
+            <TouchableOpacity style={styles.logoutRow} onPress={logout}>
+              <Feather name="log-out" size={16} color={COLORS.muted} />
+              <Text style={styles.logoutText}>Sign out</Text>
+            </TouchableOpacity>
+          ) : null}
         </View>
       </ScrollView>
 
-      {/* Bottom Live Session Banner */}
       <View style={styles.liveBannerFixed}>
         <View style={styles.liveBannerContent}>
           <View style={styles.liveBannerLeft}>
-            <View style={styles.liveBadgeRowFixed}>
-              <View style={styles.liveBadgeSmall}>
-                <View style={styles.liveDotSmall} />
-                <Text style={styles.liveBadgeTextSmall}>LIVE</Text>
-              </View>
+            <View style={styles.liveBadgeSmall}>
+              <View style={styles.liveDotSmall} />
+              <Text style={styles.liveBadgeTextSmall}>LIVE</Text>
             </View>
             <Text style={styles.liveBannerTitleFixed}>1-1 Live Sessions</Text>
-            <View style={styles.liveDetailsRow}>
-              <View style={styles.liveDetailItem}>
-                <MaterialIcons name="schedule" size={13} color="#6C757D" />
-                <Text style={styles.liveDetailTextSmall}>20m/day</Text>
-              </View>
-              <View style={styles.liveDetailItem}>
-                <MaterialIcons name="calendar-today" size={13} color="#6C757D" />
-                <Text style={styles.liveDetailTextSmall}>3d/week</Text>
-              </View>
-              <View style={styles.liveDetailItem}>
-                <MaterialIcons name="school" size={13} color="#6C757D" />
-                <Text style={styles.liveDetailTextSmall}>15 Sessions</Text>
-              </View>
-            </View>
+            <Text style={styles.liveMeta}>20m/day · 3d/week · 15 sessions</Text>
           </View>
           <View style={styles.liveBannerRight}>
-            <TouchableOpacity style={styles.liveRegisterBtn} onPress={() => { setSubmitResult(null); setShowRegistrationModal(true); }}>
-              <Text style={styles.liveRegisterBtnTxt}>Register →</Text>
+            <TouchableOpacity
+              style={styles.liveRegisterBtn}
+              onPress={() => {
+                setSubmitResult(null);
+                setShowRegistrationModal(true);
+              }}
+            >
+              <Text style={styles.liveRegisterBtnTxt}>Register</Text>
             </TouchableOpacity>
-            <Text style={styles.livePriceLarge}>₹3,000/-</Text>
+            <Text style={styles.livePriceLarge}>₹3,000</Text>
           </View>
         </View>
       </View>
 
-      {/* Language Selection Modal */}
       <Modal
         animationType="slide"
-        transparent={true}
+        transparent
         visible={showLanguageMenu}
         onRequestClose={() => setShowLanguageMenu(false)}
       >
@@ -404,12 +344,17 @@ const HomeScreen = () => {
                   setShowLanguageMenu(false);
                 }}
               >
-                <Text style={[styles.languageOptionText, selectedLanguage === lang && styles.languageOptionTextSelected]}>
+                <Text
+                  style={[
+                    styles.languageOptionText,
+                    selectedLanguage === lang && styles.languageOptionTextSelected,
+                  ]}
+                >
                   {lang}
                 </Text>
-                {selectedLanguage === lang && (
+                {selectedLanguage === lang ? (
                   <MaterialIcons name="check" size={20} color={COLORS.primary} />
-                )}
+                ) : null}
               </TouchableOpacity>
             ))}
             <TouchableOpacity
@@ -422,7 +367,6 @@ const HomeScreen = () => {
         </View>
       </Modal>
 
-      {/* Registration Modal - Full Page */}
       <Modal
         animationType="slide"
         transparent={false}
@@ -432,64 +376,45 @@ const HomeScreen = () => {
         <View style={styles.fullPageModal}>
           <View style={styles.fullPageHeader}>
             <TouchableOpacity onPress={() => setShowRegistrationModal(false)} style={styles.backButton}>
-              <MaterialIcons name="arrow-back" size={24} color={COLORS.black} />
+              <MaterialIcons name="arrow-back" size={24} color={COLORS.ink} />
             </TouchableOpacity>
             <Text style={styles.fullPageTitle}>Register for Live Session</Text>
-            <View style={{width: 24}} />
+            <View style={{ width: 24 }} />
           </View>
 
           <ScrollView style={styles.fullPageContent} showsVerticalScrollIndicator={false}>
             <View style={styles.sessionInfoCard}>
-              <View style={styles.sessionInfoHeader}>
-                <MaterialIcons name="support-agent" size={48} color={COLORS.primary} />
-                <View style={styles.liveBadgeInModal}>
-                  <View style={styles.liveDotSmall} />
-                  <Text style={styles.liveBadgeTextSmall}>LIVE</Text>
-                </View>
-              </View>
+              <FontAwesome5 name="chalkboard-teacher" size={36} color={COLORS.primary} />
               <Text style={styles.sessionInfoTitle}>1-1 Live Kannada Sessions</Text>
-              <View style={styles.sessionInfoDetails}>
-                <View style={styles.sessionInfoItem}>
-                  <MaterialIcons name="schedule" size={20} color={COLORS.gray} />
-                  <Text style={styles.sessionInfoText}>20 mins/day</Text>
-                </View>
-                <View style={styles.sessionInfoItem}>
-                  <MaterialIcons name="calendar-today" size={20} color={COLORS.gray} />
-                  <Text style={styles.sessionInfoText}>3 days/week</Text>
-                </View>
-                <View style={styles.sessionInfoItem}>
-                  <MaterialIcons name="school" size={20} color={COLORS.gray} />
-                  <Text style={styles.sessionInfoText}>15 Sessions</Text>
-                </View>
-                <View style={styles.sessionInfoItem}>
-                  <MaterialIcons name="currency-rupee" size={20} color={COLORS.accent} />
-                  <Text style={[styles.sessionInfoText, {color: COLORS.accent, fontWeight: 'bold'}]}>₹3,000/-</Text>
-                </View>
-              </View>
+              <Text style={styles.sessionInfoText}>20 mins/day · 3 days/week · 15 sessions · ₹3,000</Text>
             </View>
 
             <View style={styles.formSection}>
               <Text style={styles.formSectionTitle}>Your Details</Text>
-
-              {submitResult && (
-                <View style={[styles.alertBox, submitResult.success ? styles.alertSuccess : styles.alertError]}>
-                  <MaterialIcons name={submitResult.success ? 'check-circle' : 'error'} size={20} color={submitResult.success ? '#388E3C' : '#D32F2F'} />
-                  <Text style={[styles.alertText, {color: submitResult.success ? '#388E3C' : '#D32F2F'}]}>
+              {submitResult ? (
+                <View
+                  style={[
+                    styles.alertBox,
+                    submitResult.success ? styles.alertSuccess : styles.alertError,
+                  ]}
+                >
+                  <Text
+                    style={{ color: submitResult.success ? '#388E3C' : '#D32F2F', flex: 1 }}
+                  >
                     {submitResult.success ? submitResult.message : submitResult.error}
                   </Text>
                 </View>
-              )}
-              
+              ) : null}
+
               <View style={styles.inputContainer}>
                 <Text style={styles.inputLabel}>Full Name *</Text>
                 <TextInput
                   style={styles.textInput}
                   placeholder="Enter your full name"
                   value={registrationForm.name}
-                  onChangeText={(text) => setRegistrationForm({...registrationForm, name: text})}
+                  onChangeText={(text) => setRegistrationForm({ ...registrationForm, name: text })}
                 />
               </View>
-              
               <View style={styles.inputContainer}>
                 <Text style={styles.inputLabel}>Email Address *</Text>
                 <TextInput
@@ -498,10 +423,9 @@ const HomeScreen = () => {
                   keyboardType="email-address"
                   autoCapitalize="none"
                   value={registrationForm.email}
-                  onChangeText={(text) => setRegistrationForm({...registrationForm, email: text})}
+                  onChangeText={(text) => setRegistrationForm({ ...registrationForm, email: text })}
                 />
               </View>
-              
               <View style={styles.inputContainer}>
                 <Text style={styles.inputLabel}>Phone Number *</Text>
                 <TextInput
@@ -509,45 +433,26 @@ const HomeScreen = () => {
                   placeholder="+91 XXXXX XXXXX"
                   keyboardType="phone-pad"
                   value={registrationForm.phone}
-                  onChangeText={(text) => setRegistrationForm({...registrationForm, phone: text})}
+                  onChangeText={(text) => setRegistrationForm({ ...registrationForm, phone: text })}
                 />
-              </View>
-
-              <View style={styles.benefitsSection}>
-                <Text style={styles.benefitsTitle}>What You'll Get:</Text>
-                <View style={styles.benefitItem}>
-                  <MaterialIcons name="check-circle" size={20} color={COLORS.accent} />
-                  <Text style={styles.benefitText}>Personalized 1-1 attention</Text>
-                </View>
-                <View style={styles.benefitItem}>
-                  <MaterialIcons name="check-circle" size={20} color={COLORS.accent} />
-                  <Text style={styles.benefitText}>Flexible scheduling</Text>
-                </View>
-                <View style={styles.benefitItem}>
-                  <MaterialIcons name="check-circle" size={20} color={COLORS.accent} />
-                  <Text style={styles.benefitText}>Native Kannada speakers</Text>
-                </View>
-                <View style={styles.benefitItem}>
-                  <MaterialIcons name="check-circle" size={20} color={COLORS.accent} />
-                  <Text style={styles.benefitText}>Progress tracking</Text>
-                </View>
               </View>
             </View>
           </ScrollView>
 
           <View style={styles.fullPageFooter}>
             <TouchableOpacity
-              style={[styles.registerSubmitButtonFull, submitting && {opacity:0.7}]}
+              style={[styles.registerSubmitButtonFull, submitting && { opacity: 0.7 }]}
               onPress={handleRegister}
               disabled={submitting}
             >
-              {submitting
-                ? <ActivityIndicator color={COLORS.white} />
-                : <>
-                    <Text style={styles.registerSubmitText}>Submit Registration</Text>
-                    <MaterialIcons name="arrow-forward" size={20} color={COLORS.white} />
-                  </>
-              }
+              {submitting ? (
+                <ActivityIndicator color={COLORS.white} />
+              ) : (
+                <>
+                  <Text style={styles.registerSubmitText}>Submit Registration</Text>
+                  <MaterialIcons name="arrow-forward" size={20} color={COLORS.white} />
+                </>
+              )}
             </TouchableOpacity>
           </View>
         </View>
@@ -559,832 +464,262 @@ const HomeScreen = () => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: COLORS.background,
-  },
-  scrollContent: {
-    flexGrow: 1,
-  },
-  contentWrapper: {
-    paddingBottom: 140,
-    paddingHorizontal: 16,
+    backgroundColor: COLORS.cream,
   },
   scrollView: {
     flex: 1,
-    backgroundColor: COLORS.background,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 120,
   },
   hero: {
-    width: width,
-    height: width * 0.5625, // Assuming 16:9 aspect ratio
-    backgroundColor: '#fff',
+    width: '100%',
+    minHeight: CONTENT_WIDTH * 1.05,
+    justifyContent: 'space-between',
   },
-  heroTopRow: {
-    paddingTop: 16,
+  heroGradient: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  topBar: {
+    paddingTop: 48,
     paddingHorizontal: 16,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  heroRightGroup: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  heroBottomSpacer: {
-    flex: 1,
-  },
-  pillButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    backgroundColor: 'rgba(255,255,255,0.9)',
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.05)',
-    gap: 4,
-  },
-  languagePillButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    backgroundColor: 'rgba(255,255,255,0.9)',
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.05)',
-    gap: 4,
-  },
-  flagIconSmall: {
-    width: 18,
-    height: 12,
-    borderRadius: 2,
-  },
-  pillText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: COLORS.black,
-  },
-  iconButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.9)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.05)',
-  },
-  notifDot: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    width: 7,
-    height: 7,
-    borderRadius: 3.5,
-    backgroundColor: '#EF4444',
-  },
-
-  lessonCard: {
-    backgroundColor: '#FFF7ED',
-    borderRadius: 16,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: COLORS.cardBorder,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    marginVertical: 4,
-  },
-  lessonLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    flex: 1,
-  },
-  lessonIconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#F97316',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 3,
-    borderColor: '#FFF',
-  },
-  lessonIconImage: {
-    width: 24,
-    height: 24,
-    tintColor: 'white',
-  },
-  lessonTextCol: {
-    flex: 1,
-  },
-  lessonCardTitle: {
-    fontSize: 17,
-    fontWeight: '800',
-    color: '#9A3412',
-  },
-  lessonSubtitle: {
-    fontSize: 12,
-    color: '#7C2D12',
-    fontWeight: '500',
-  },
-  progressRowSmall: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 6,
-    gap: 8,
-  },
-  progressTrackSmall: {
-    width: 60,
-    height: 5,
-    backgroundColor: '#FED7AA',
-    borderRadius: 10,
-    overflow: 'hidden',
-  },
-  progressFillSmall: {
-    height: '100%',
-    backgroundColor: '#F97316',
-    borderRadius: 10,
-  },
-  lessonProgressText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#7C2D12',
-  },
-  lessonChevronWrap: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: 'white',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  courseList: {
-    marginTop: 16,
-    gap: 12,
-  },
-  CompactCard: {
-    borderRadius: 20,
-    padding: 18,
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-    height: 110,
-    overflow: 'hidden',
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-  },
-  basicsIconContainer: {
-    width: 60,
-    height: 60,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  bubbleWrapperLeft: {
-    position: 'absolute',
-    top: 5,
-    left: 5,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  bubbleWrapperRight: {
-    position: 'absolute',
-    bottom: 5,
-    right: 5,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  bubbleTextLeft: {
-    position: 'absolute',
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#FFF',
-    top: 6,
-  },
-  bubbleTextRight: {
-    position: 'absolute',
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: '#FFF',
-    top: 5,
-  },
-  numbersIconContainer: {
-    width: 45,
-    height: 45,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  number1: {
-    fontWeight: '900',
-    textShadowColor: 'rgba(0,0,0,0.1)',
-    textShadowOffset: {width: 1, height: 1},
-    textShadowRadius: 1,
-  },
-  number2: {
-    fontWeight: '900',
-    textShadowColor: 'rgba(0,0,0,0.1)',
-    textShadowOffset: {width: 1, height: 1},
-    textShadowRadius: 1,
-  },
-  number3: {
-    fontWeight: '900',
-    textShadowColor: 'rgba(0,0,0,0.1)',
-    textShadowOffset: {width: 1, height: 1},
-    textShadowRadius: 1,
-  },
-  grammarIconContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  grammarCharOverlay: {
-    position: 'absolute',
-    bottom: 4,
-    right: 4,
-    backgroundColor: '#9333EA',
-    paddingHorizontal: 4,
-    borderRadius: 4,
-  },
-  grammarChar: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: '#FFF',
-  },
-  BasicsDecoration: {
-    position: 'absolute',
-    right: 55,
-    top: '50%',
-    marginTop: -40,
-    width: 100,
-    height: 80,
-  },
-  paperStack: {
-    width: 60,
-    height: 75,
-  },
-  paperBack: {
-    position: 'absolute',
-    width: 60,
-    height: 75,
-    backgroundColor: '#FFF',
-    borderRadius: 6,
-    borderWidth: 1.5,
-    borderColor: '#F3F4F6',
-  },
-  paperFront: {
-    width: 60,
-    height: 75,
-    backgroundColor: '#FFF',
-    borderRadius: 6,
-    borderWidth: 1.5,
-    borderColor: '#F3F4F6',
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-  },
-  paperText: {
-    fontSize: 11,
-    fontWeight: 'bold',
-    color: '#1F2937',
-  },
-  paperTextEnglish: {
-    fontSize: 9,
-    color: '#6B7280',
-    marginTop: 2,
-  },
-  plantInPot: {
-    position: 'absolute',
-    right: 0,
-    bottom: 5,
-    alignItems: 'center',
-  },
-  pot: {
-    width: 20,
-    height: 18,
-    backgroundColor: '#D97706',
-    borderRadius: 4,
-  },
-  plantLeaf: {
-    width: 6,
-    height: 12,
-    backgroundColor: '#10B981',
-    borderRadius: 3,
-    position: 'absolute',
-    top: -10,
-    left: 2,
-    transform: [{rotate: '-20deg'}],
-  },
-  plantLeaf2: {
-    width: 6,
-    height: 12,
-    backgroundColor: '#059669',
-    borderRadius: 3,
-    position: 'absolute',
-    top: -12,
-    right: 2,
-    transform: [{rotate: '20deg'}],
-  },
-  NumbersDecoration: {
-    position: 'absolute',
-    right: 65,
-    top: '50%',
-    marginTop: -35,
-    width: 70,
-    height: 70,
-  },
-  block3d: {
-    width: 28,
-    height: 28,
-    borderRadius: 6,
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'absolute',
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
-  },
-  blockText: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#FFF',
-  },
-  GrammarDecoration: {
-    position: 'absolute',
-    right: 60,
-    top: '50%',
-    marginTop: -40,
-    width: 80,
-    height: 80,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  notepad: {
-    width: 55,
-    height: 70,
-    backgroundColor: '#FFF',
-    borderRadius: 8,
-    borderWidth: 1.5,
-    borderColor: '#F3F4F6',
-    padding: 8,
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-  },
-  notepadSpiral: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    position: 'absolute',
-    top: -4,
-    left: 8,
-    right: 8,
-  },
-  spiralDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#A78BFA',
-  },
-  notepadContent: {
-    marginTop: 6,
-    gap: 6,
-  },
-  notepadLine: {
-    height: 4,
-    borderRadius: 2,
-  },
-  pencil: {
-    position: 'absolute',
-    width: 8,
-    height: 45,
-    backgroundColor: '#FBBF24',
-    right: -2,
-    bottom: 5,
-    borderRadius: 2,
-    transform: [{rotate: '-15deg'}],
-    borderWidth: 1,
-    borderColor: '#D97706',
-    zIndex: 5,
-  },
-  pencilTip: {
-    position: 'absolute',
-    top: -6,
-    width: 8,
-    height: 8,
-    backgroundColor: '#000',
-    borderRadius: 4,
-  },
-  CompactArrowWrap: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#FFFFFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginLeft: 10,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-  },
-  CompactIconWrap: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 14,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-  },
-  CompactTextCol: {
-    flex: 1,
-    zIndex: 2,
-  },
-  CompactTitleEnglish: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#111827',
-    marginBottom: 2,
-  },
-  CompactSubtitle: {
-    fontSize: 13,
-    color: '#4B5563',
-    fontWeight: '600',
-  },
-  CompactSubtitleKannada: {
-    fontSize: 12,
-    color: '#6B7280',
-    marginTop: 2,
-  },
-  CompactProgressRow: {
-    marginTop: 12,
+  topRight: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
   },
-  CompactProgressTrack: {
-    flex: 1,
-    height: 4,
-    backgroundColor: 'rgba(0,0,0,0.08)',
-    borderRadius: 2,
-    overflow: 'hidden',
+  langPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(255,248,243,0.92)',
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: 20,
   },
-  CompactProgressFill: {
-    height: '100%',
-    borderRadius: 2,
+  langPillText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: COLORS.ink,
   },
-  CompactProgressText: {
-    fontSize: 11,
-    color: '#4B5563',
+  streakBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    backgroundColor: 'rgba(255,248,243,0.92)',
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 14,
+  },
+  streakFire: {
+    fontSize: 12,
+  },
+  streakNum: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: COLORS.ink,
+  },
+  settingsIconBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: 'rgba(255,248,243,0.92)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatar: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    borderWidth: 2,
+    borderColor: COLORS.cream,
+  },
+  heroCopy: {
+    paddingHorizontal: 20,
+    paddingBottom: 28,
+  },
+  brandKannada: {
+    fontSize: 52,
+    lineHeight: 60,
+    fontWeight: '700',
+    color: COLORS.cream,
+  },
+  brandLatin: {
+    marginTop: 2,
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#FF6B5A',
+  },
+  heroSupport: {
+    marginTop: 10,
+    marginBottom: 18,
+    fontSize: 15,
+    lineHeight: 22,
+    color: 'rgba(255,248,243,0.9)',
+    maxWidth: 280,
+  },
+  heroCta: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
+  heroCtaText: {
+    color: COLORS.cream,
+    fontSize: 15,
     fontWeight: '700',
   },
-  CompactDecoration: {
-    position: 'absolute',
-    right: 15,
-    top: '50%',
-    marginTop: -20,
-    opacity: 0.15,
+  contentWrapper: {
+    paddingHorizontal: 16,
+    marginTop: -8,
   },
-  courseIconWrap: {
-    width: 68,
-    height: 68,
-    borderRadius: 34,
-    justifyContent: 'center',
+  sectionLabel: {
+    fontSize: 13,
+    fontWeight: '700',
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+    color: COLORS.muted,
+    marginBottom: 10,
+  },
+  courseList: {
+    gap: 8,
+  },
+  courseRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginRight: 12,
-    borderWidth: 3,
-    borderColor: 'rgba(255,255,255,0.8)',
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: 'rgba(26,18,16,0.1)',
   },
-  courseTextCol: {
+  courseIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  courseText: {
     flex: 1,
   },
   courseTitle: {
-    fontSize: 19,
-    fontWeight: '900',
-    color: '#111827',
+    fontSize: 16,
+    fontWeight: '700',
+    color: COLORS.ink,
   },
   courseSubtitle: {
-    fontSize: 12,
-    color: '#4B5563',
-    fontWeight: '600',
-  },
-  courseSubtitleKannada: {
-    fontSize: 13,
-    color: '#4B5563',
-    fontWeight: '700',
     marginTop: 2,
+    fontSize: 13,
+    color: COLORS.muted,
   },
-  progressRow: {
-    marginTop: 12,
-    flexDirection: 'column',
-    gap: 4,
-  },
-  progressTrack: {
-    width: '70%',
-    height: 6,
-    backgroundColor: 'rgba(0,0,0,0.06)',
-    borderRadius: 10,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    borderRadius: 10,
-  },
-  progressText: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: '#4B5563',
-  },
-  courseChevronWrap: {
-    width: 36,
-    height: 36,
+  dailyCard: {
+    marginTop: 24,
+    backgroundColor: COLORS.sand,
     borderRadius: 18,
-    backgroundColor: 'white',
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
+    padding: 16,
   },
-
-  liveCard: {
-    marginTop: 16,
-    backgroundColor: '#FFFBF5',
+  dailyHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  dailyToggle: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(255,255,255,0.7)',
     borderRadius: 20,
-    borderWidth: 1,
-    borderColor: COLORS.cardBorder,
-    padding: 16,
+    padding: 3,
   },
-  liveTopRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  liveBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#EF4444',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-    gap: 4,
-  },
-  liveDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: 'white',
-  },
-  liveBadgeText: {
-    color: 'white',
-    fontWeight: '900',
-    fontSize: 10,
-  },
-  liveTitle: {
-    fontSize: 16,
-    fontWeight: '900',
-    color: '#111827',
-  },
-  liveTeacherText: {
-    fontSize: 11,
-    color: '#6B7280',
-    fontWeight: '600',
-  },
-  liveSubtitle: {
-    marginTop: 10,
-    color: '#4B5563',
-    fontSize: 13,
-    lineHeight: 18,
-    fontWeight: '500',
-  },
-  liveBottomRow: {
-    marginTop: 16,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-  },
-  liveMeta: {
-    flex: 1,
-    gap: 12,
-  },
-  nextSessionBadge: {
-    backgroundColor: 'white',
-    padding: 8,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#F3F4F6',
-    alignSelf: 'flex-start',
-  },
-  nextSessionLabel: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#111827',
-  },
-  sessionTimeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginTop: 2,
-  },
-  sessionTimeText: {
-    fontSize: 11,
-    color: '#4B5563',
-    fontWeight: '700',
-  },
-  learnerGroup: {
-    flexDirection: 'column',
-    gap: 6,
-  },
-  learnerAvatars: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  avatar: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: 'white',
-  },
-  learnerCount: {
-    fontSize: 10,
-    color: '#6B7280',
-    fontWeight: '700',
-  },
-  joinButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#EF4444',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 12,
-    gap: 4,
-  },
-  joinButtonText: {
-    color: 'white',
-    fontWeight: '900',
-    fontSize: 13,
-  },
-
-  statsRow: {
-    marginTop: 16,
-    backgroundColor: 'white',
+  dailyPill: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#F3F4F6',
-    padding: 12,
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
   },
-  statItem: {
+  dailyPillActive: {
+    backgroundColor: COLORS.primary,
+  },
+  dailyPillTxt: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: COLORS.muted,
+  },
+  dailyPillTxtActive: {
+    color: COLORS.cream,
+  },
+  dailyReloadBtn: {
+    padding: 6,
+  },
+  dailyBody: {
+    marginTop: 18,
     alignItems: 'center',
   },
-  statIcon: {
-    fontSize: 18,
+  dailyEmoji: {
+    fontSize: 28,
+    marginBottom: 6,
   },
-  statLabel: {
+  dailyKannada: {
+    fontSize: 32,
+    fontWeight: '700',
+    color: COLORS.ink,
+  },
+  dailyPronun: {
     marginTop: 4,
-    fontSize: 9,
-    color: '#6B7280',
-    fontWeight: '800',
-    textTransform: 'uppercase',
-  },
-  statValue: {
-    fontSize: 11,
-    color: '#111827',
-    fontWeight: '900',
-    marginTop: 1,
-  },
-  liveBanner: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 16,
-    marginTop: 8,
-    marginBottom: 20,
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    borderWidth: 1,
-    borderColor: '#FEE2E2',
-  },
-  liveBadgeRow: {
-    flexDirection: 'row',
-    marginBottom: 8,
-  },
-  liveBadgeSmall: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FEE2E2',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    gap: 4,
-  },
-  liveDotSmall: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#EF4444',
-  },
-  liveBadgeTextSmall: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: '#EF4444',
-  },
-  liveBannerTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#111827',
-    marginBottom: 12,
-  },
-  liveDetailsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  liveDetailItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  liveDetailText: {
-    fontSize: 13,
-    color: '#4B5563',
-    fontWeight: '600',
-  },
-  livePriceText: {
     fontSize: 14,
-    color: '#4CAF50',
-    fontWeight: 'bold',
+    color: COLORS.muted,
   },
-  registerButton: {
-    backgroundColor: '#4CAF50',
+  dailyMeaning: {
+    marginTop: 12,
+    fontSize: 16,
+    fontWeight: '600',
+    color: COLORS.primary,
+  },
+  dailyRevealBtn: {
+    marginTop: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+  },
+  dailyRevealTxt: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: COLORS.primary,
+  },
+  logoutRow: {
+    marginTop: 28,
+    marginBottom: 8,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 10,
-    marginTop: 12,
     gap: 8,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
   },
-  registerButtonText: {
-    fontSize: 15,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
+  logoutText: {
+    fontSize: 13,
+    color: COLORS.muted,
+    fontWeight: '600',
   },
   liveBannerFixed: {
     position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: '#FFFFFF',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    elevation: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    left: 12,
+    right: 12,
+    bottom: 16,
+    backgroundColor: COLORS.white,
+    borderRadius: 16,
+    padding: 14,
     borderWidth: 1,
-    borderColor: '#FEE2E2',
+    borderColor: 'rgba(26,18,16,0.08)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 6,
   },
   liveBannerContent: {
     flexDirection: 'row',
@@ -1393,503 +728,208 @@ const styles = StyleSheet.create({
   },
   liveBannerLeft: {
     flex: 1,
+    paddingRight: 10,
   },
-  liveBadgeRowFixed: {
+  liveBadgeSmall: {
     flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 6,
+    gap: 4,
     marginBottom: 4,
   },
+  liveDotSmall: {
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+    backgroundColor: COLORS.white,
+  },
+  liveBadgeTextSmall: {
+    color: COLORS.white,
+    fontSize: 9,
+    fontWeight: '800',
+  },
   liveBannerTitleFixed: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#111827',
-    marginBottom: 6,
+    fontSize: 15,
+    fontWeight: '800',
+    color: COLORS.ink,
   },
-  liveDetailTextSmall: {
+  liveMeta: {
+    marginTop: 2,
     fontSize: 11,
-    color: '#4B5563',
-    fontWeight: '600',
-  },
-  livePriceTextSmall: {
-    fontSize: 12,
-    color: '#4CAF50',
-    fontWeight: 'bold',
+    color: COLORS.muted,
   },
   liveBannerRight: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginLeft: 12,
-  },
-  humanIconWrap: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#E9F7EC',
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'relative',
-    marginBottom: 6,
-  },
-  headsetIndicator: {
-    position: 'absolute',
-    bottom: -2,
-    right: -2,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: '#4CAF50',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
-  },
-  registerNowBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#4CAF50',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
+    alignItems: 'flex-end',
     gap: 4,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 3,
   },
-  registerNowText: {
+  liveRegisterBtn: {
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 10,
+  },
+  liveRegisterBtnTxt: {
+    color: COLORS.cream,
+    fontWeight: '700',
+    fontSize: 13,
+  },
+  livePriceLarge: {
     fontSize: 12,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
+    fontWeight: '700',
+    color: COLORS.muted,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: 'white',
-    borderRadius: 16,
-    padding: 24,
-    width: '80%',
-    maxWidth: 300,
-    alignItems: 'center',
+    backgroundColor: COLORS.cream,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
   },
   modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 20,
+    fontSize: 18,
+    fontWeight: '800',
+    color: COLORS.ink,
+    marginBottom: 12,
   },
   languageOption: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    width: '100%',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    marginBottom: 8,
+    alignItems: 'center',
+    paddingVertical: 14,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: 'rgba(26,18,16,0.1)',
   },
   languageOptionSelected: {
-    backgroundColor: '#FFE5E5',
+    backgroundColor: 'transparent',
   },
   languageOptionText: {
     fontSize: 16,
-    color: '#333',
+    color: COLORS.ink,
   },
   languageOptionTextSelected: {
-    fontWeight: '600',
+    fontWeight: '700',
     color: COLORS.primary,
   },
   modalCloseButton: {
     marginTop: 16,
-    paddingVertical: 10,
-    paddingHorizontal: 24,
-    backgroundColor: '#f0f0f0',
-    borderRadius: 8,
+    alignItems: 'center',
+    paddingVertical: 12,
   },
   modalCloseText: {
-    fontSize: 14,
-    color: '#666',
-    fontWeight: '600',
-  },
-  registrationModalContent: {
-    backgroundColor: 'white',
-    borderRadius: 16,
-    padding: 24,
-    width: '90%',
-    maxWidth: 360,
-    alignItems: 'center',
-  },
-  registrationSubtitle: {
-    fontSize: 13,
-    color: '#666',
-    textAlign: 'center',
-    marginBottom: 20,
-    lineHeight: 18,
-  },
-  inputContainer: {
-    width: '100%',
-    marginBottom: 16,
-  },
-  inputLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 6,
-  },
-  textInput: {
-    width: '100%',
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
     fontSize: 15,
-    color: '#333',
-  },
-  registerSubmitButton: {
-    width: '100%',
-    backgroundColor: COLORS.primary,
-    paddingVertical: 14,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 10,
-    marginBottom: 12,
-  },
-  registerSubmitText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '700',
+    color: COLORS.muted,
   },
   fullPageModal: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: COLORS.cream,
   },
   fullPageHeader: {
+    paddingTop: 52,
+    paddingHorizontal: 16,
+    paddingBottom: 12,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    backgroundColor: COLORS.white,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
   },
   backButton: {
     padding: 4,
   },
   fullPageTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
+    fontSize: 16,
+    fontWeight: '800',
+    color: COLORS.ink,
   },
   fullPageContent: {
     flex: 1,
-    padding: 16,
+    paddingHorizontal: 16,
   },
   sessionInfoCard: {
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.sand,
     borderRadius: 16,
     padding: 20,
+    alignItems: 'center',
     marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  sessionInfoHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 16,
-  },
-  liveBadgeInModal: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FEE2E2',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-    gap: 4,
   },
   sessionInfoTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 16,
-  },
-  sessionInfoDetails: {
-    gap: 12,
-  },
-  sessionInfoItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+    marginTop: 12,
+    fontSize: 18,
+    fontWeight: '800',
+    color: COLORS.ink,
+    textAlign: 'center',
   },
   sessionInfoText: {
-    fontSize: 15,
-    color: '#666',
+    marginTop: 8,
+    fontSize: 13,
+    color: COLORS.muted,
+    textAlign: 'center',
   },
   formSection: {
-    backgroundColor: COLORS.white,
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 20,
+    paddingBottom: 40,
   },
   formSectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 16,
-  },
-  benefitsSection: {
-    marginTop: 20,
-    paddingTop: 20,
-    borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
-  },
-  benefitsTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333',
+    fontSize: 15,
+    fontWeight: '800',
+    color: COLORS.ink,
     marginBottom: 12,
   },
-  benefitItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginBottom: 10,
-  },
-  benefitText: {
-    fontSize: 15,
-    color: '#666',
-    flex: 1,
-  },
-  fullPageFooter: {
-    padding: 16,
-    backgroundColor: COLORS.white,
-    borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
-  },
-  registerSubmitButtonFull: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: COLORS.primary,
-    paddingVertical: 16,
-    borderRadius: 12,
-    gap: 8,
-  },
-  // ── Top Header ──────────────────────────────
-  topHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: 48,
-    paddingBottom: 10,
-    backgroundColor: COLORS.white,
-  },
-  langPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    borderWidth: 1.5,
-    borderColor: '#E0E0E0',
-    borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    backgroundColor: '#F9F9F9',
-  },
-  langPillText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#333',
-  },
-  streakBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: '#FFF3E0',
-    borderRadius: 20,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderWidth: 1,
-    borderColor: '#FFE0B2',
-  },
-  streakFire: {
-    fontSize: 16,
-  },
-  streakNum: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: '#E65100',
-  },
-  settingsIconBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    backgroundColor: '#F5F5F5',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-  },
-  // ── Live Banner redesign ─────────────────────
-  liveRegisterBtn: {
-    backgroundColor: COLORS.accent,
-    borderRadius: 24,
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-    marginBottom: 6,
-  },
-  liveRegisterBtnTxt: {
-    color: '#FFFFFF',
-    fontWeight: '800',
-    fontSize: 14,
-  },
-  livePriceLarge: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: '#1B5E20',
-    textAlign: 'center',
-  },
-  // ── Daily Inline Card ────────────────────────
-  dailyInlineCard: {
-    backgroundColor: '#1A1A3E',
-    borderRadius: 20,
-    marginTop: 16,
-    overflow: 'hidden',
-    paddingBottom: 14,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
-    elevation: 6,
-  },
-  dailyInlineHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: 14,
-    paddingBottom: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.07)',
-  },
-  dailyInlineToggle: {
-    flexDirection: 'row',
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    borderRadius: 20,
-    padding: 3,
-    gap: 2,
-  },
-  dailyInlinePill: {
-    paddingHorizontal: 14,
-    paddingVertical: 5,
-    borderRadius: 18,
-  },
-  dailyInlinePillActive: {
-    backgroundColor: COLORS.primary,
-  },
-  dailyInlinePillTxt: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: 'rgba(255,255,255,0.5)',
-  },
-  dailyInlinePillTxtActive: {
-    color: '#FFFFFF',
-  },
-  dailyReloadBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  dailyInlineBody: {
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 18,
-    paddingBottom: 10,
-  },
-  dailyInlineEmoji: {
-    fontSize: 32,
-    marginBottom: 10,
-  },
-  dailyInlineKannada: {
-    fontSize: 30,
-    fontWeight: 'bold',
-    color: '#FFD700',
-    textAlign: 'center',
-    marginBottom: 6,
-  },
-  dailyInlinePronun: {
-    fontSize: 13,
-    color: '#9090B0',
-    fontStyle: 'italic',
-    marginBottom: 14,
-  },
-  dailyInlineMeaning: {
-    fontSize: 16,
-    color: '#FFFFFF',
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-  dailyRevealBtn: {
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.25)',
-    borderRadius: 20,
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-  },
-  dailyRevealTxt: {
-    fontSize: 13,
-    color: 'rgba(255,255,255,0.55)',
-  },
-  dailyInlineDots: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 5,
-    marginTop: 6,
-  },
-  dailyDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-  },
-  dailyDotActive: {
-    width: 18,
-    backgroundColor: COLORS.primary,
-  },
-  // ── Alert boxes ──────────────────────────────
   alertBox: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
     padding: 12,
     borderRadius: 10,
-    marginBottom: 16,
+    marginBottom: 12,
   },
   alertSuccess: {
     backgroundColor: '#E8F5E9',
-    borderWidth: 1,
-    borderColor: '#A5D6A7',
   },
   alertError: {
     backgroundColor: '#FFEBEE',
-    borderWidth: 1,
-    borderColor: '#FFCDD2',
   },
-  alertText: {
-    flex: 1,
-    fontSize: 14,
-    fontWeight: '500',
+  inputContainer: {
+    marginBottom: 14,
+  },
+  inputLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: COLORS.ink,
+    marginBottom: 6,
+  },
+  textInput: {
+    backgroundColor: COLORS.white,
+    borderWidth: 1,
+    borderColor: 'rgba(26,18,16,0.12)',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 15,
+    color: COLORS.ink,
+  },
+  fullPageFooter: {
+    padding: 16,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: 'rgba(26,18,16,0.1)',
+  },
+  registerSubmitButtonFull: {
+    backgroundColor: COLORS.primary,
+    borderRadius: 12,
+    paddingVertical: 15,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  registerSubmitText: {
+    color: COLORS.white,
+    fontSize: 16,
+    fontWeight: '700',
   },
 });
 

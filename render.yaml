@@ -1,0 +1,26 @@
+# Render Blueprint — Mok Kannada web + register API
+# https://render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: mokkannada
+    runtime: node
+    plan: free
+    region: singapore
+    branch: release
+    buildCommand: yarn install --frozen-lockfile && yarn build:web
+    startCommand: node api/server.js
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: "20.19.4"
+      - key: NOTIFY_EMAIL
+        value: moktarul@gmail.com
+      - key: AUTH0_DOMAIN
+        value: moktarul.us.auth0.com
+      - key: AUTH0_CLIENT_ID
+        value: gVkewszjIZTXm7bPp3l6ZgXHbARjDJND
+      - key: AUTH0_AUDIENCE
+        value: ""
+      # Optional — set in Render dashboard for reliable mail:
+      # RESEND_API_KEY, RESEND_FROM, SMTP_HOST, SMTP_USER, SMTP_PASS, SMTP_PORT
