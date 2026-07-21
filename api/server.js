@@ -66,6 +66,8 @@ async function sendRegistrationEmail({ name, email, phone, language, message }) 
     `Time: ${new Date().toISOString()}`,
   ].join('\n');
 
+  const errors = [];
+
   // 1) Resend (preferred if configured)
   if (process.env.RESEND_API_KEY) {
     const from = process.env.RESEND_FROM || 'Mok Kannada <onboarding@resend.dev>';
@@ -83,58 +85,53 @@ async function sendRegistrationEmail({ name, email, phone, language, message }) 
         text,
       }),
     });
-    if (!r.ok) {
-      const body = await r.text();
-      throw new Error(`Resend failed: ${r.status} ${body}`);
-    }
-    return;
+    if (r.ok) return;
+    errors.push(`Resend: ${r.status} ${await r.text()}`);
   }
 
-  // 2) SMTP via nodemailer (optional)
+  // 2) SMTP via nodemailer (Gmail app password, etc.)
   if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
-    // eslint-disable-next-line global-require
-    const nodemailer = require('nodemailer');
-    const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: Number(process.env.SMTP_PORT || 587),
-      secure: process.env.SMTP_SECURE === 'true',
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
-    });
-    await transporter.sendMail({
-      from: process.env.SMTP_FROM || process.env.SMTP_USER,
-      to: NOTIFY_EMAIL,
-      replyTo: email,
-      subject,
-      text,
-    });
-    return;
+    try {
+      // eslint-disable-next-line global-require
+      const nodemailer = require('nodemailer');
+      const transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST,
+        port: Number(process.env.SMTP_PORT || 587),
+        secure: process.env.SMTP_SECURE === 'true',
+        auth: {
+          user: process.env.SMTP_USER,
+          pass: process.env.SMTP_PASS,
+        },
+      });
+      await transporter.sendMail({
+        from: process.env.SMTP_FROM || process.env.SMTP_USER,
+        to: NOTIFY_EMAIL,
+        replyTo: email,
+        subject,
+        text,
+      });
+      return;
+    } catch (e) {
+      errors.push(`SMTP: ${e.message}`);
+    }
   }
 
-  // 3) Zero-config fallback — FormSubmit (recipient must confirm first mail once)
-  const r = await fetch(`https://formsubmit.co/ajax/${encodeURIComponent(NOTIFY_EMAIL)}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-    },
-    body: JSON.stringify({
-      name,
-      email,
-      phone,
-      language,
-      message: message || '(none)',
-      _subject: subject,
-      _template: 'table',
-      _captcha: 'false',
-    }),
-  });
-  if (!r.ok) {
-    const body = await r.text();
-    throw new Error(`FormSubmit failed: ${r.status} ${body}`);
+  // 3) Legacy PHP API (stores lead + PHP mail() to moktarul@gmail.com)
+  const phpUrl = process.env.PHP_REGISTER_URL || 'https://dromominds.com/apps/register.php';
+  try {
+    const r = await fetch(phpUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, phone, language, message }),
+    });
+    const data = await r.json().catch(() => ({}));
+    if (r.ok && data.success) return;
+    errors.push(`PHP: ${data.error || r.status}`);
+  } catch (e) {
+    errors.push(`PHP: ${e.message}`);
   }
+
+  throw new Error(errors.join(' | ') || 'No email transport configured');
 }
 
 app.listen(PORT, () => {
